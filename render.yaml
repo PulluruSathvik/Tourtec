@@ -1,20 +1,17 @@
 services:
-  # 1. Backend Express API Server
+  # 1. Spring Boot Java STS Backend API
   - type: web
     name: tourtec-backend
-    env: node
+    env: docker
+    dockerfilePath: Dockerfile.backend
     plan: free
-    buildCommand: npm --prefix backend install
-    startCommand: npm --prefix backend start
     envVars:
-      - key: NODE_ENV
-        value: production
+      - key: PORT
+        value: 5000
       - key: DATABASE_URL
         fromDatabase:
           name: tourtec-db
           property: connectionString
-      - key: FAST2SMS_API_KEY
-        value: BkOTeFDtAryJq5IwLzdXYGCW1EbMhZsfQuS64VljP20ogx7icvv4ZQmWMqBe3KUCGfFSTPyrYJlVd19t
 
   # 2. Frontend React / Vite Web App
   - type: web
