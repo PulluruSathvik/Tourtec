@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .holiday-hero-gradient {
+    background: linear-gradient(180deg, #9AE6EC 0%, #BAF2E9 40%, #E0F7F6 80%, #FFFFFF 100%);
+  }
+  .capsule-shadow {
+    box-shadow: 0 20px 45px -10px rgba(14, 165, 233, 0.18), 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  }
+  .glass-capsule {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+  }
+  .btn-primary-blue {
+    background: #1D63FF;
+    color: white;
+    transition: all 0.2s ease-in-out;
+  }
+  .btn-primary-blue:hover {
+    background: #154cdb;
+    box-shadow: 0 10px 25px -4px rgba(29, 99, 255, 0.4);
+  }
+  .font-holiday {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+/* Custom Clean Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Leaflet Map Light Overrides */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  border-radius: 1.5rem;
+  background: #f1f5f9 !important;
+}

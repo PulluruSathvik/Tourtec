@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DATABASE_URL=postgres://postgres:root@db:5432/tourtec_db
+      - FAST2SMS_API_KEY=BkOTeFDtAryJq5IwLzdXYGCW1EbMhZsfQuS64VljP20ogx7icvv4ZQmWMqBe3KUCGfFSTPyrYJlVd19t
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: tourtec_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:
