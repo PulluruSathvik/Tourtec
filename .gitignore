@@ -2,6 +2,10 @@
 node_modules/
 */node_modules/
 
+# Legacy / Spring backend
+backend-spring/
+.metadata/
+
 # Production builds
 dist/
 build/
