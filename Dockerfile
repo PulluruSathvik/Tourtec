@@ -1,30 +1,16 @@
-# Multi-stage Docker build for TOURTEC Production Deployment
-FROM node:20-alpine AS builder
-
+# Multi-stage Docker build for TOURTEC Spring Boot Backend
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY backend/pom.xml .
+COPY backend/src ./src
+RUN mvn clean package -DskipTests
 
-# Install frontend dependencies and build
-COPY frontend/package*.json ./frontend/
-RUN npm --prefix frontend install
-COPY frontend ./frontend
-RUN npm --prefix frontend run build
-
-# Stage 2: Production Server
-FROM node:20-alpine
-
+# Stage 2: Java Runtime
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 
-# Install backend dependencies
-COPY backend/package*.json ./backend/
-RUN npm --prefix backend install --omit=dev
-
-# Copy backend source & built frontend assets
-COPY backend ./backend
-COPY --from=builder /app/frontend/dist ./frontend/dist
-
-ENV NODE_ENV=production
 ENV PORT=5000
-
 EXPOSE 5000
 
-CMD ["node", "backend/server.js"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
