@@ -14,7 +14,7 @@ services:
           name: tourtec-db
           property: connectionString
       - key: FAST2SMS_API_KEY
-        sync: false
+        value: BkOTeFDtAryJq5IwLzdXYGCW1EbMhZsfQuS64VljP20ogx7icvv4ZQmWMqBe3KUCGfFSTPyrYJlVd19t
 
   # 2. Frontend React / Vite Web App
   - type: web
@@ -32,8 +32,8 @@ services:
         value: 849997510284-lb00lknh9vfbhrhj2pfhmkiqr9qcdgei.apps.googleusercontent.com
 
 databases:
-  # 3. PostgreSQL Database
+  # 3. PostgreSQL Managed Database
   - name: tourtec-db
     databaseName: tourtec_db
-    user: postgres
+    user: tourtec_user
     plan: free
