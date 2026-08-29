@@ -1,12 +1,15 @@
-// API Service connecting frontend with all backend endpoints for TOURTEC India
+import { getApiBaseUrl } from './authService';
 
-const API_BASE = '/api';
+const getBase = () => {
+  const base = getApiBaseUrl();
+  return base ? `${base}/api` : '/api';
+};
 
 export const apiService = {
   // 1. Health check
   async getHealth() {
     try {
-      const res = await fetch(`${API_BASE}/health`);
+      const res = await fetch(`${getBase()}/health`);
       if (!res.ok) throw new Error('Health check failed');
       return await res.json();
     } catch (err) {
