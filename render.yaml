@@ -2,8 +2,9 @@ services:
   # 1. Spring Boot Java STS Backend API
   - type: web
     name: tourtec-backend
-    env: docker
+    runtime: docker
     dockerfilePath: Dockerfile.backend
+    dockerContext: .
     plan: free
     envVars:
       - key: PORT
@@ -16,7 +17,7 @@ services:
   # 2. Frontend React / Vite Web App
   - type: web
     name: tourtec-frontend
-    env: static
+    runtime: static
     buildCommand: npm --prefix frontend install && npm --prefix frontend run build
     staticPublishPath: frontend/dist
     envVars:
