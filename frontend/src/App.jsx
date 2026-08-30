@@ -8,6 +8,7 @@ import { HotelBookingHub } from './components/Hotels/HotelBookingHub';
 import { TransportRentalsHub } from './components/Transport/TransportRentalsHub';
 import { SmartFlowDistribution } from './components/FlowDistribution/SmartFlowDistribution';
 import { ContextLanguageAssistant } from './components/LanguageAssistant/ContextLanguageAssistant';
+import { HeritageTimeMachine } from './components/TimeMachine/HeritageTimeMachine';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
 import { SosModal } from './components/Common/SosModal';
 import { RewardsWalletModal } from './components/Common/RewardsWalletModal';
@@ -43,6 +44,7 @@ export const AppContent = () => {
                 {activeTab === 'digitalTwin' && `Live Crowd Density & Queue Clearance in ${currentDestination.name.split(',')[0]}`}
                 {activeTab === 'flow' && 'Avoid Queues with 1-Click VIP FastPasses'}
                 {activeTab === 'assistant' && 'Multilingual AI Travel Guide & Camera Translator'}
+                {activeTab === 'timemachine' && `AI Heritage Time Machine: Travel 500 Years in ${currentDestination.name.split(',')[0]}`}
               </h2>
             </div>
 
@@ -61,6 +63,7 @@ export const AppContent = () => {
             {activeTab === 'digitalTwin' && <TravelDigitalTwin />}
             {activeTab === 'flow' && <SmartFlowDistribution />}
             {activeTab === 'assistant' && <ContextLanguageAssistant />}
+            {activeTab === 'timemachine' && <HeritageTimeMachine />}
           </div>
         </div>
 
