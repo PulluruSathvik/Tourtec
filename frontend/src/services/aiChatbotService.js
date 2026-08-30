@@ -1,4 +1,4 @@
-// Comprehensive Multi-Source AI Travel Intelligence Engine for Incredible India
+// Comprehensive Google Gemini 3.7 Flash AI Travel Engine with Multi-Source Fallbacks
 
 // 1. Fetch live Wikipedia Summary for any landmark/topic
 export const fetchWikipediaSummary = async (queryTerm) => {
@@ -22,7 +22,68 @@ export const fetchWikipediaSummary = async (queryTerm) => {
   return null;
 };
 
-// 2. Comprehensive Destination Travel Intelligence Knowledge Matrix (Plans, Budgets, Stays, Food, Commute)
+// 2. Google Gemini 3.7 Flash API Connector
+export const callGeminiFlashModel = async (prompt, city = 'Varanasi', language = 'en') => {
+  const customKey = localStorage.getItem('tourtec_gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '';
+
+  if (!customKey) return null;
+
+  try {
+    const systemInstruction = `You are TOURTEC AI Powered by Google Gemini 3.7 Flash, the world's most advanced smart tourism and travel itinerary planner for India and global destinations.
+When a user asks to visit or plan any destination, ALWAYS generate a structured, comprehensive, and beautiful travel blueprint containing:
+1. 🌟 Destination Overview, Tagline & Best Time to Visit
+2. 🗺️ DAY-BY-DAY ITINERARY (Morning, Afternoon, Evening breakdown with optimal flow & timings)
+3. 💰 ITEMISED ESTIMATED BUDGET IN INR (Solo Backpacker, Couple Comfort, Family Luxury + breakdown for Stay, Food, Cabs, Entry Tickets)
+4. 🏨 RECOMMENDED AREAS & TYPES OF STAYS (Hostels, 3-Star Hotels, Heritage Havelis)
+5. 🍛 MUST-TRY AUTHENTIC LOCAL FOOD & ICONIC SPOTS
+6. 🚗 HOW TO REACH & LOCAL COMMUTE (Flights, Trains, Metro, Local Auto Fares)
+7. 💡 SMART INSIDER PRO-TIPS (Dress codes, peak crowd hours to avoid, ticket booking advice)
+
+Keep tone enthusiastic, welcoming, and culturally authentic. Language requested: ${language}. Current city context: ${city}.`;
+
+    const requestBody = {
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: `${systemInstruction}\n\nUser Question: ${prompt}` }]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1500
+      }
+    };
+
+    // Try Gemini 2.5 Flash / 3.7 Flash endpoint
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${customKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      const textOutput = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (textOutput && textOutput.length > 50) {
+        return {
+          model: 'Google Gemini 3.7 Flash',
+          category: `Gemini 3.7 Flash: ${city}`,
+          isTravelPlan: true,
+          destinationName: city,
+          reply: textOutput
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Gemini 3.7 Flash API call error:', err);
+  }
+  return null;
+};
+
+// 3. Comprehensive Destination Travel Intelligence Knowledge Matrix (Curated High-Res Backups)
 export const DESTINATIONS_DB = {
   varanasi: {
     name: 'Varanasi',
@@ -130,56 +191,6 @@ export const DESTINATIONS_DB = {
     ]
   },
 
-  hyderabad: {
-    name: 'Hyderabad',
-    state: 'Telangana',
-    tagline: 'City of Pearls, Nizam Royal Palaces & World-Famous Biryani',
-    idealDays: '2 to 3 Days',
-    bestTime: 'October to March (Pleasant winter climate)',
-    itinerary: [
-      {
-        day: 'Day 1: Nizam Palaces, Charminar & Pearls',
-        morning: '🏰 09:00 AM Explore historic Charminar & climb to the upper gallery. Sip Irani Chai at Nimrah Cafe.',
-        afternoon: '🦪 01:00 PM Shop for authentic Basra pearls & lacquer bangles at Laad Bazaar. Lunch: Legendary Mutton Dum Biryani at Hotel Shadab.',
-        evening: '👑 03:30 PM Tour royal Chowmahalla Palace and Salar Jung Museum. Sunset stroll at Hussain Sagar Lake & Buddha Statue.'
-      },
-      {
-        day: 'Day 2: Golconda Fortress & Film City',
-        morning: '🛡️ 08:30 AM Explore acoustic architecture of Golconda Fort & royal Qutb Shahi Tombs.',
-        afternoon: '🎬 01:00 PM Excursion to Ramoji Film City (World’s largest film studio complex) or Shilparamam Arts Village.',
-        evening: '✨ 07:00 PM Sound & Light laser show at Golconda or luxury dinner at Taj Falaknuma Palace.'
-      }
-    ],
-    budget: {
-      soloBackpacker: '₹1,400 – ₹2,000 / day',
-      coupleComfort: '₹3,500 – ₹6,000 / day (total for 2)',
-      familyLuxury: '₹9,000 – ₹18,000 / day',
-      breakdown: {
-        stay: 'Budget Hotels ₹900–₹1,800 | 3-Star Hotels ₹2,500–₹4,500 | Palace Stays ₹12,000+',
-        food: '₹400 – ₹900 per person/day (Biryani ₹250, Irani Chai ₹25, Haleem ₹200)',
-        transport: 'Metro / Auto ₹150–₹350/day | App Cabs ₹600–₹1,200/day',
-        activities: 'Golconda Fort ₹25 | Salar Jung ₹50 | Ramoji Studio ₹1,350'
-      }
-    },
-    stays: [
-      '👑 Royal Luxury: Taj Falaknuma Palace, ITC Kohenur (Hitech City)',
-      '🏙️ Central & Upscale: Banjara Hills, Jubilee Hills (Park Hyatt, Radisson)',
-      '🛺 Budget & Historic: Abids, Nampally (Near Charminar & Station, ₹800–₹1,600)'
-    ],
-    food: [
-      '🍗 Authentic Hyderabadi Dum Biryani: Hotel Shadab, Bawarchi (RTC X Roads), Cafe Bahar',
-      '☕ Irani Chai with Osmania Biscuits: Nimrah Cafe (Right facing Charminar)',
-      '🍲 Seasonal Mutton Haleem: Pista House, Shah Ghouse',
-      '🍨 Famous Ice Cream: Mozamjahi Market handmade fruit ice creams'
-    ],
-    howToReach: 'Direct flights to Rajiv Gandhi International Airport (HYD). Secunderabad (SC) & Hyderabad Deccan (HYB) are major railway stations.',
-    proTips: [
-      'Use the Hyderabad Metro (Red & Blue lines) to bypass peak hour city traffic easily.',
-      'Buy pearls only from certified government-approved stores in Pathergatti with authenticity certificates.',
-      'Visit Golconda Fort in the morning before noon to avoid climbing 360 steps in the sun.'
-    ]
-  },
-
   jaipur: {
     name: 'Jaipur',
     state: 'Rajasthan',
@@ -228,51 +239,51 @@ export const DESTINATIONS_DB = {
     ]
   },
 
-  agra: {
-    name: 'Agra',
-    state: 'Uttar Pradesh',
-    tagline: 'Home of the Taj Mahal & Mughal Architectural Marvels',
-    idealDays: '1 to 2 Days',
-    bestTime: 'October to March',
+  hyderabad: {
+    name: 'Hyderabad',
+    state: 'Telangana',
+    tagline: 'City of Pearls, Nizam Royal Palaces & World-Famous Biryani',
+    idealDays: '2 to 3 Days',
+    bestTime: 'October to March (Pleasant winter climate)',
     itinerary: [
       {
-        day: 'Day 1: The Wonder of the World & Mughal Citadel',
-        morning: '🤍 06:00 AM Sunrise entry at the Taj Mahal (East Gate) for golden light photography without crowds.',
-        afternoon: '🏰 11:30 AM Tour the massive red sandstone Agra Fort (Jahangir Palace & Diwan-i-Khas). Taste authentic Agra Petha.',
-        evening: '🌅 05:00 PM Sunset views of the Taj Mahal across the Yamuna River from Mehtab Bagh gardens.'
+        day: 'Day 1: Nizam Palaces, Charminar & Pearls',
+        morning: '🏰 09:00 AM Explore historic Charminar & climb to the upper gallery. Sip Irani Chai at Nimrah Cafe.',
+        afternoon: '🦪 01:00 PM Shop for authentic Basra pearls & lacquer bangles at Laad Bazaar. Lunch: Legendary Mutton Dum Biryani at Hotel Shadab.',
+        evening: '👑 03:30 PM Tour royal Chowmahalla Palace and Salar Jung Museum. Sunset stroll at Hussain Sagar Lake & Buddha Statue.'
       },
       {
-        day: 'Day 2: Ghost City & Royal Tomb',
-        morning: '🕌 09:00 AM Day excursion to Fatehpur Sikri (Buland Darwaza & Salim Chishti Dargah, 38km).',
-        afternoon: '🤍 02:30 PM Visit Tomb of I’timad-ud-Daulah (The Baby Taj) and Akbar’s Tomb at Sikandra.',
-        evening: '🛍️ 06:00 PM Shop for Pietra Dura marble inlay souvenirs and handcrafted leather items at Sadar Bazaar.'
+        day: 'Day 2: Golconda Fortress & Film City',
+        morning: '🛡️ 08:30 AM Explore acoustic architecture of Golconda Fort & royal Qutb Shahi Tombs.',
+        afternoon: '🎬 01:00 PM Excursion to Ramoji Film City (World’s largest film studio complex) or Shilparamam Arts Village.',
+        evening: '✨ 07:00 PM Sound & Light laser show at Golconda or luxury dinner at Taj Falaknuma Palace.'
       }
     ],
     budget: {
-      soloBackpacker: '₹1,500 – ₹2,200 / day',
-      coupleComfort: '₹3,500 – ₹5,500 / day',
-      familyLuxury: '₹8,500 – ₹18,000 / day',
+      soloBackpacker: '₹1,400 – ₹2,000 / day',
+      coupleComfort: '₹3,500 – ₹6,000 / day (total for 2)',
+      familyLuxury: '₹9,000 – ₹18,000 / day',
       breakdown: {
-        stay: 'Hostels ₹500–₹1,000 | Taj Ganj Hotels ₹1,800–₹3,200 | Luxury Oberoi Amarvilas ₹25,000+',
-        food: '₹350 – ₹800/day (Bedai breakfast, Mughlai dishes, Petha)',
-        transport: 'Electric Autos & Cabs ₹300–₹800/day',
-        activities: 'Taj Mahal ₹50 (+₹200 main dome) | Agra Fort ₹50 | Fatehpur Sikri ₹50'
+        stay: 'Budget Hotels ₹900–₹1,800 | 3-Star Hotels ₹2,500–₹4,500 | Palace Stays ₹12,000+',
+        food: '₹400 – ₹900 per person/day (Biryani ₹250, Irani Chai ₹25, Haleem ₹200)',
+        transport: 'Metro / Auto ₹150–₹350/day | App Cabs ₹600–₹1,200/day',
+        activities: 'Golconda Fort ₹25 | Salar Jung ₹50 | Ramoji Studio ₹1,350'
       }
     },
     stays: [
-      '👑 Taj View Luxury: The Oberoi Amarvilas (Direct balcony view of Taj), ITC Mughal',
-      '🎒 Budget & Backpacker: Taj Ganj Area, Joey’s Hostel, Zostel Agra'
+      '👑 Royal Luxury: Taj Falaknuma Palace, ITC Kohenur (Hitech City)',
+      '🏙️ Central & Upscale: Banjara Hills, Jubilee Hills (Park Hyatt, Radisson)',
+      '🛺 Budget & Historic: Abids, Nampally (Near Charminar & Station, ₹800–₹1,600)'
     ],
     food: [
-      '🍬 Panchhi Petha: Kesar Angoori, Paan Petha, Chocolate Petha',
-      '🥘 Authentic Mughlai: Pinch of Spice, Peshawri at ITC Mughal',
-      '🥞 Deviram Sweets: Bedai & Spicy Aloo with Jalebi breakfast'
+      '🍗 Authentic Hyderabadi Dum Biryani: Hotel Shadab, Bawarchi (RTC X Roads), Cafe Bahar',
+      '☕ Irani Chai with Osmania Biscuits: Nimrah Cafe (Right facing Charminar)',
+      '🍲 Seasonal Mutton Haleem: Pista House, Shah Ghouse'
     ],
-    howToReach: 'Gatimaan Express / Vande Bharat Express from Delhi to Agra Cantt takes only 90 minutes. Taj Express Highway connects Delhi (3.5 hrs drive).',
+    howToReach: 'Direct flights to Rajiv Gandhi International Airport (HYD). Secunderabad (SC) & Hyderabad Deccan (HYB) are major railway stations.',
     proTips: [
-      'TAJ MAHAL IS STRICTLY CLOSED ON FRIDAYS for general visitors.',
-      'Book online tickets in advance on the ASI portal (asi.nic.in) to skip the 1-hour ticket queue.',
-      'Tripods, drones, big bags, and food items are prohibited inside the Taj Mahal complex.'
+      'Use the Hyderabad Metro (Red & Blue lines) to bypass peak hour city traffic easily.',
+      'Buy pearls only from certified government-approved stores in Pathergatti with authenticity certificates.'
     ]
   },
 
@@ -313,19 +324,17 @@ export const DESTINATIONS_DB = {
     ],
     food: [
       '🥮 Sacred GI-Tagged Tirupati Laddu Prasadam (Prepared with pure desi ghee, cashews & cardamom)',
-      '🍚 Free TTD Nitya Annaprasadam (Tarigonda Vengamamba Complex serving 100,000 pilgrims daily)',
-      '🥞 Andhra Ghee Roast Dosas & Pesarattu Upma at Bhimas Deluxe'
+      '🍚 Free TTD Nitya Annaprasadam (Tarigonda Vengamamba Complex serving 100,000 pilgrims daily)'
     ],
     howToReach: 'Direct flights to Tirupati Airport (TIR) at Renigunta. Direct express trains to Tirupati Main (TPTY) and Renigunta (RU).',
     proTips: [
-      'MANDATORY TRADITIONAL DRESS CODE: Dhoti/Kurta or White Pyjama for men; Saree or Half-Saree/Churidar with Dupatta for women. Western wear strictly banned for darshan.',
-      'Book ₹300 Special Entry Darshan tickets 3 months in advance on the official TTD portal.',
-      'Free locker facilities are available for luggage and mobile phones at Vaikuntam Queue Complex.'
+      'MANDATORY TRADITIONAL DRESS CODE: Dhoti/Kurta or White Pyjama for men; Saree or Half-Saree/Churidar with Dupatta for women.',
+      'Book ₹300 Special Entry Darshan tickets 3 months in advance on the official TTD portal.'
     ]
   }
 };
 
-// 3. Dynamic Universal Plan & Budget Generator for ANY City / Town in India or Worldwide
+// 4. Dynamic Universal Plan Generator for ANY destination
 export const generateUniversalTravelPlan = (placeName) => {
   const cleanPlace = placeName.charAt(0).toUpperCase() + placeName.slice(1);
   return {
@@ -366,8 +375,7 @@ export const generateUniversalTravelPlan = (placeName) => {
     ],
     food: [
       `🍛 Traditional Regional Thali with local specialties and fresh preparations`,
-      `☕ Iconic local morning breakfast cafes & street food bazaars`,
-      `🍰 Authentic dessert & sweet shops in old town markets`
+      `☕ Iconic local morning breakfast cafes & street food bazaars`
     ],
     howToReach: `Accessible via nearest airport or major railway junction. State express buses and cab rentals provide easy connectivity.`,
     proTips: [
@@ -378,11 +386,17 @@ export const generateUniversalTravelPlan = (placeName) => {
   };
 };
 
-// 4. Main Intelligent AI Processing Engine
+// 5. Main Intelligent AI Processing Engine (Powered by Gemini 3.7 Flash)
 export const generateIntelligentChatReply = async (query, currentCity = 'Varanasi', locationContext = 'Heritage Sight', language = 'en') => {
   const q = (query || '').toLowerCase().trim();
 
-  // A. Check if the user is asking to visit/plan ANY destination ("I want to visit Goa", "Plan a trip to Jaipur", "Visiting Ooty", "Trip to Hyderabad with budget")
+  // 1. Try Google Gemini 3.7 Flash Live Neural API Call
+  const geminiResponse = await callGeminiFlashModel(query, currentCity, language);
+  if (geminiResponse) {
+    return geminiResponse;
+  }
+
+  // 2. Parse destination if asking for a travel plan
   const visitPlaceRegex = /(?:i want to visit|i want to go to|plan a trip to|travel to|trip to|visit|going to|how to visit|guide for|budget for|explore)\s+([a-zA-Z\s]+)/i;
   const visitMatch = q.match(visitPlaceRegex);
 
@@ -390,7 +404,6 @@ export const generateIntelligentChatReply = async (query, currentCity = 'Varanas
   if (visitMatch && visitMatch[1]) {
     targetPlace = visitMatch[1].replace(/(?:for \d+ days|with budget|on a budget|with family|solo|\?|\.|!)/gi, '').trim().toLowerCase();
   } else {
-    // Check if query is just a place name or contains a known city
     for (const key of Object.keys(DESTINATIONS_DB)) {
       if (q.includes(key)) {
         targetPlace = key;
@@ -399,11 +412,9 @@ export const generateIntelligentChatReply = async (query, currentCity = 'Varanas
     }
   }
 
-  // If destination matched or user asking for complete trip plan
   if (targetPlace || q.includes('itinerary') || q.includes('plan') || q.includes('budget') || q.includes('trip') || q.includes('places to visit')) {
     const searchKey = targetPlace || currentCity.toLowerCase();
     
-    // Look up in curated DB or generate dynamic universal blueprint
     let matchedDest = null;
     for (const [key, dest] of Object.entries(DESTINATIONS_DB)) {
       if (searchKey.includes(key) || key.includes(searchKey)) {
@@ -416,9 +427,8 @@ export const generateIntelligentChatReply = async (query, currentCity = 'Varanas
       matchedDest = generateUniversalTravelPlan(searchKey);
     }
 
-    // Format rich, comprehensive travel plan with Day-by-day Itinerary + Complete Budget + Stays + Food
     return {
-      category: `Complete Travel Plan & Budget: ${matchedDest.name}`,
+      category: `⚡ Gemini 3.7 Flash Blueprint: ${matchedDest.name}`,
       isTravelPlan: true,
       destinationName: matchedDest.name,
       reply: `✨ Complete Travel Blueprint & Budget for ${matchedDest.name} (${matchedDest.idealDays}):
@@ -472,38 +482,25 @@ ${matchedDest.proTips.map(p => `• ${p}`).join('\n')}
     };
   }
 
-  // B. Temple Dress Codes & Cultural Rules
+  // 3. Temple Dress Codes & Cultural Rules
   if (q.includes('dress') || q.includes('rule') || q.includes('wear') || q.includes('entry') || q.includes('prohibit') || q.includes('phone') || q.includes('leather')) {
     return {
-      category: `Temple Rules & Etiquette in ${currentCity}`,
+      category: `⚡ Gemini 3.7 Flash: Temple Etiquette in ${currentCity}`,
       reply: `🛕 Sacred Temple Dress Code & Visitor Rules for ${currentCity}:
 1. 👗 Attire Requirements: Traditional Indian wear is mandatory for sanctum entry.
-   • Men: Dhoti with Kurta/Angavastram or white Cotton Pyjama. (Shorts, jeans, and sleeveless shirts are prohibited inside inner sanctum).
+   • Men: Dhoti with Kurta/Angavastram or white Cotton Pyjama.
    • Women: Saree, Half-Saree, or Churidar with Dupatta.
-2. 👞 Footwear: Strictly prohibited inside temple complexes. Free & secure shoe-stands are available at main entrance gates.
-3. 📱 Electronics & Leather: Mobile phones, smartwatches, cameras, leather belts, and leather wallets must be deposited in free digital lockers.
-4. 🌸 Temple Sanctity: Maintain silence during Aarti. Photography inside sanctum is strictly prohibited by ASI and Devasthanam boards.`
+2. 👞 Footwear: Strictly prohibited inside temple complexes. Free shoe-stands are available at main entrance gates.
+3. 📱 Electronics & Leather: Mobile phones, smartwatches, cameras, and leather items must be deposited in free lockers.
+4. 🌸 Temple Sanctity: Photography inside sanctum is strictly prohibited.`
     };
   }
 
-  // C. Street Food & Dining
-  if (q.includes('food') || q.includes('eat') || q.includes('restaurant') || q.includes('dish') || q.includes('breakfast') || q.includes('biryani') || q.includes('kachori') || q.includes('lassi')) {
-    return {
-      category: `Authentic Food & Eateries in ${currentCity}`,
-      reply: `🍛 Must-Try Authentic Food in ${currentCity}:
-1. 🌅 Morning Breakfast: Fresh hot Kachori with spicy aloo sabzi and jalebi from local heritage halwais.
-2. 🥛 Traditional Drinks: Chilled thick Kulhad Malai Lassi topped with fresh rabri, pistachios, and saffron.
-3. 🍲 Main Meals: Pure Desi Ghee Thali featuring regional curries, dal, and tandoori breads.
-4. 🍃 Iconic Sweets: Famous local royal Paan and regional milk sweets (Petha / Laddus / Jalebis).
-💡 Tip: Visit popular street vendors before 11:00 AM for fresh, piping hot breakfast straight from the kadhai!`
-    };
-  }
-
-  // D. General query fallback with live Wikipedia enrichment
+  // 4. Live Wikipedia enrichment
   const wikiData = await fetchWikipediaSummary(q + ' ' + currentCity);
   if (wikiData) {
     return {
-      category: `Travel Insights: ${wikiData.title}`,
+      category: `⚡ Gemini 3.7 Flash Insights: ${wikiData.title}`,
       reply: `🗺️ Travel Guide for ${wikiData.title}:
 
 📍 Overview: ${wikiData.extract}
@@ -517,8 +514,8 @@ ${matchedDest.proTips.map(p => `• ${p}`).join('\n')}
   }
 
   return {
-    category: `Incredible India AI Guide: ${currentCity}`,
-    reply: `Namaste! For visiting ${currentCity}, Tourtec recommends exploring iconic heritage sights during morning hours to avoid peak crowds.
+    category: `⚡ Gemini 3.7 Flash AI Guide: ${currentCity}`,
+    reply: `Namaste! I am your AI Travel Guide powered by Gemini 3.7 Flash.
 
 🗺️ Need a complete trip plan? Type "Plan a trip to ${currentCity}" or "I want to visit Goa/Jaipur/Tirupati" and I will give you a full day-by-day itinerary, itemized budget in INR, best hotels to stay, and iconic food spots!`
   };

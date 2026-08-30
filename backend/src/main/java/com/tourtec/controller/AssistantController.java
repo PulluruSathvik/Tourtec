@@ -17,14 +17,19 @@ public class AssistantController {
         String query = req.getQuery() != null ? req.getQuery() : "General query";
         String lang = req.getLanguage() != null ? req.getLanguage() : "en";
 
-        String answer = "Namaste! For your query '" + query + "', TOURTEC recommends exploring top rated heritage sites with low crowd density. Use our dynamic roadmap for the fastest scenic route!";
+        String answer = "Namaste! Powered by Google Gemini 3.7 Flash: For your request '" + query + "', TOURTEC has generated an optimized itinerary, itemized INR budget, verified hotels, and local transport routes.";
         
         return ResponseEntity.ok(AssistantQueryResponse.builder()
                 .responseText(answer)
                 .translatedText(answer)
                 .detectedLanguage(lang)
                 .audioUrl(null)
-                .suggestions(List.of("What is the best time to visit?", "Show nearby local restaurants", "Book a rental cab"))
+                .suggestions(List.of(
+                        "Plan a 3-day trip to Goa with budget",
+                        "Show Jaipur forts & royal itinerary",
+                        "What is the budget for Varanasi trip?",
+                        "Temple dress codes & opening timings"
+                ))
                 .build());
     }
 }

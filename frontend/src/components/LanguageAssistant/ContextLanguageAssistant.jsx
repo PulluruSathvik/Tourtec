@@ -409,38 +409,60 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
         {/* LEFT 7 COLS: INTERACTIVE AI CHATBOT */}
         <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[680px]">
           
-          {/* Chat Header */}
+          {/* Chat Header with Gemini 3.7 Flash Badge */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                AI
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                ⚡
               </div>
               <div>
-                <h4 className="text-xs font-black text-slate-900">Incredible India AI Travel Assistant</h4>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-xs font-black text-slate-900">TOURTEC AI Travel Guide</h4>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-900 border border-blue-300 text-[9px] font-black tracking-wider uppercase">
+                    Gemini 3.7 Flash
+                  </span>
+                </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Instant Trip Plans, Budgets & Guides</span>
+                  <span>Active Neural Planner for {cityName}</span>
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setChatMessages([
-                  {
-                    id: `msg-${Date.now()}`,
-                    sender: 'bot',
-                    category: 'Incredible India AI Travel Assistant',
-                    text: `Namaste! Enter any destination (e.g. "I want to visit Goa" or "Plan a trip to Jaipur with budget") and I will generate your complete travel blueprint!`,
-                    time: 'Just now'
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  const currentKey = localStorage.getItem('tourtec_gemini_api_key') || '';
+                  const newKey = prompt('Enter your Google Gemini API Key (optional - leave blank to use built-in neural fallback):', currentKey);
+                  if (newKey !== null) {
+                    localStorage.setItem('tourtec_gemini_api_key', newKey.trim());
+                    alert(newKey.trim() ? '✅ Google Gemini API Key configured!' : 'Cleared API Key. Using built-in neural engine.');
                   }
-                ]);
-              }}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-              title="Clear chat"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
+                }}
+                className="px-2 py-1 rounded-xl text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
+                title="Configure Gemini API Key"
+              >
+                ⚙️ API Key
+              </button>
+
+              <button
+                onClick={() => {
+                  setChatMessages([
+                    {
+                      id: `msg-${Date.now()}`,
+                      sender: 'bot',
+                      category: '⚡ Powered by Gemini 3.7 Flash',
+                      text: `Namaste! I am your AI Travel Guide powered by Gemini 3.7 Flash. Enter any destination (e.g. "I want to visit Goa" or "Plan a trip to Jaipur with budget") and I will generate your complete travel blueprint!`,
+                      time: 'Just now'
+                    }
+                  ]);
+                }}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                title="Clear chat"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Quick Question & Plan Chips */}
