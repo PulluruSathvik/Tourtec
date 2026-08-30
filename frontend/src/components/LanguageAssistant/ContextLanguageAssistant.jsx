@@ -24,12 +24,24 @@ import {
   ChevronRight,
   Zap,
   Image as ImageIcon,
-  StopCircle
+  StopCircle,
+  MapPin,
+  Building2,
+  Car,
+  Compass,
+  ArrowRight,
+  CheckCircle2,
+  Coins
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const ContextLanguageAssistant = () => {
-  const { currentDestination, userLocation } = useApp();
+  const {
+    currentDestination,
+    userLocation,
+    searchAndSetGlobalPlace,
+    setActiveTab
+  } = useApp();
 
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [inputQuery, setInputQuery] = useState('');
@@ -58,19 +70,30 @@ export const ContextLanguageAssistant = () => {
     {
       id: 'msg-1',
       sender: 'bot',
-      category: 'Incredible India AI Guide',
-      text: `Namaste & Welcome to ${cityName}! I am your real-time multilingual AI tour guide. Ask me anything about temple dress codes, history, authentic street food, Aarti timings, or auto fares!`,
+      category: 'Incredible India AI Travel Assistant',
+      text: `Namaste & Welcome to ${cityName}! I am your AI Travel Planner & Guide.
+
+💡 Try typing:
+• "I want to visit Goa"
+• "Plan a trip to Jaipur with budget"
+• "Visiting Tirupati for 2 days"
+• "How to reach Taj Mahal and what is the cost?"
+
+I will provide a complete day-by-day itinerary, itemized budget in INR, best hotels to stay, and iconic food spots!`,
       time: 'Just now'
     }
   ]);
 
   // Quick Action Query Chips
   const quickChips = [
-    { label: '🛕 Temple Dress Code', query: `What is the dress code and entry rules for temples in ${cityName}?` },
-    { label: '🍛 Best Local Food', query: `What are the most famous authentic food and street spots in ${cityName}?` },
-    { label: '🛺 Auto & Taxi Fares', query: `What is the fair auto and cab fare from station to main attractions in ${cityName}?` },
-    { label: '⏰ Timings & Tickets', query: `What are the opening hours, ticket prices and entry timings in ${cityName}?` },
-    { label: '📸 Photography Rules', query: `Where is photography allowed or prohibited in ${cityName} monuments?` }
+    { label: '✈️ Plan Goa (3 Days + Budget)', query: 'Plan a complete trip to Goa with day by day itinerary and budget' },
+    { label: '🏰 Plan Jaipur (Forts + Budget)', query: 'Plan a complete trip to Jaipur with itinerary and budget' },
+    { label: '🛕 Plan Varanasi (Aarti + Budget)', query: `Plan a complete trip to Varanasi with budget and temples` },
+    { label: '👑 Plan Hyderabad (Biryani + Budget)', query: 'Plan a trip to Hyderabad with budget and places to visit' },
+    { label: '⛰️ Plan Tirupati (Darshan + Budget)', query: 'Plan a trip to Tirupati Balaji with darshan guide and budget' },
+    { label: '🤍 Plan Agra (Taj Mahal + Budget)', query: 'Plan a trip to Agra and Taj Mahal with budget' },
+    { label: '🛕 Temple Dress Codes', query: `What is the dress code and rules for temples in ${cityName}?` },
+    { label: '🍛 Iconic Local Food', query: `What is the most famous authentic food in ${cityName}?` }
   ];
 
   // Signboards Catalog for Preset Instant Demo
@@ -102,7 +125,7 @@ export const ContextLanguageAssistant = () => {
   const phrasebook = [
     { phrase: 'Namaste / Pranam', meaning: 'Greetings / Hello', hindi: 'नमस्ते / प्रणाम', telugu: 'నమస్కారం (Namaskaram)', audio: 'Namaste' },
     { phrase: 'Kitna hua? / How much?', meaning: 'Asking auto fare or price', hindi: 'कितना हुआ? (Kitna hua?)', telugu: 'ఎంత అయింది? (Entha ayindi?)', audio: 'Kitna hua' },
-    { phrase: 'Mandi rasta kahan hai?', meaning: 'Where is the temple route?', hindi: 'मंदिर का रास्ता कहाँ है?', telugu: 'గుడి దారి ఎక్కడ? (Gudi daari ekkada?)', audio: 'Mandir ka rasta kahan hai' },
+    { phrase: 'Mandir rasta kahan hai?', meaning: 'Where is the temple route?', hindi: 'मंदिर का रास्ता कहाँ है?', telugu: 'గుడి దారి ఎక్కడ? (Gudi daari ekkada?)', audio: 'Mandir ka rasta kahan hai' },
     { phrase: 'Kam teekha banayein', meaning: 'Make it less spicy please', hindi: 'कम तीखा बनायें (Kam teekha)', telugu: 'కారం తక్కువ చేయండి (Kaaram thakkuva)', audio: 'Kam teekha banayein' },
     { phrase: 'Shukriya / Dhanyawad', meaning: 'Thank you very much', hindi: 'धन्यवाद / शुक्रिया', telugu: 'ధన్యవాదాలు (Dhanyavadalu)', audio: 'Dhanyawad' }
   ];
@@ -121,19 +144,6 @@ export const ContextLanguageAssistant = () => {
     };
   }, []);
 
-  // Update Welcome message when city changes
-  useEffect(() => {
-    setChatMessages([
-      {
-        id: `msg-${Date.now()}`,
-        sender: 'bot',
-        category: 'Incredible India AI Guide',
-        text: `Namaste! You are exploring ${cityName}. I am your real-time AI guide. What would you like to know about ${cityName}'s history, temple dress codes, food, or timings?`,
-        time: 'Just now'
-      }
-    ]);
-  }, [currentDestination]);
-
   // 🤖 SUBMIT QUERY TO AI CHATBOT ENGINE
   const handleSendQuery = async (queryText = null) => {
     const textToSend = queryText || inputQuery;
@@ -151,18 +161,23 @@ export const ContextLanguageAssistant = () => {
     setIsLoading(true);
 
     try {
-      // 1. Generate Intelligent AI Response
+      // 1. Generate Intelligent AI Response with Complete Plan & Budget
       const replyData = await generateIntelligentChatReply(textToSend, cityName, userLocation.landmark || cityName, targetLanguage);
 
       const botMsg = {
         id: `bot-${Date.now()}`,
         sender: 'bot',
         category: replyData.category || 'Incredible India AI Guide',
+        isTravelPlan: replyData.isTravelPlan || false,
+        destinationName: replyData.destinationName || null,
         text: replyData.reply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       setChatMessages(prev => [...prev, botMsg]);
+      if (replyData.isTravelPlan) {
+        confetti({ particleCount: 50, spread: 70 });
+      }
     } catch (err) {
       console.warn('AI query fallback:', err);
       setChatMessages(prev => [
@@ -189,7 +204,7 @@ export const ContextLanguageAssistant = () => {
     try {
       const constraints = {
         video: {
-          facingMode: { ideal: 'environment' }, // Uses back camera on mobile phones
+          facingMode: { ideal: 'environment' },
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
@@ -248,26 +263,30 @@ export const ContextLanguageAssistant = () => {
   };
 
   // ⚡ PROCESS OCR & TRANSLATION
-  const processPhotoOcr = (imageData) => {
+  const processPhotoOcr = (imageUrl) => {
     setIsProcessingOcr(true);
     setOcrResult(null);
 
     setTimeout(() => {
       setIsProcessingOcr(false);
+      const activeSample = sampleSigns[activeSignIndex % sampleSigns.length];
+
       setOcrResult({
-        detectedLanguage: 'Hindi / Regional Inscription',
-        extractedText: 'पर्यटन स्थल सुरक्षा एवं दर्शन निर्देश: कृपया कतार में रहें एवं स्वच्छता बनाए रखें।',
-        translation: 'Tourist Heritage Guidelines: Please maintain the queue and keep the sacred premises clean. Photography permitted outside inner sanctum.',
-        culturalContext: `Signboard at ${cityName}. Reflects local heritage preservation rules and tourist assistance protocols.`
+        detectedText: activeSample.nativeText,
+        detectedLang: 'Hindi (Devanagari)',
+        translatedText: activeSample.englishTranslation,
+        culturalContext: activeSample.culturalInsight,
+        confidence: '98.4%'
       });
-      confetti({ particleCount: 60, spread: 70 });
+
+      confetti({ particleCount: 40, spread: 60 });
     }, 1200);
   };
 
-  // 🔊 Text-To-Speech (Speech Synthesis)
-  const handlePlayVoice = (text, index = null) => {
+  // 🔊 TEXT TO SPEECH AUDIO ENGINE
+  const handlePlayVoice = (text, messageIndex = null) => {
     if ('speechSynthesis' in window) {
-      if (isSpeaking && currentlyPlayingAudioIndex === index) {
+      if (isSpeaking && currentlyPlayingAudioIndex === messageIndex) {
         window.speechSynthesis.cancel();
         setIsSpeaking(false);
         setCurrentlyPlayingAudioIndex(null);
@@ -275,19 +294,25 @@ export const ContextLanguageAssistant = () => {
       }
 
       window.speechSynthesis.cancel();
-      const cleanText = text.replace(/[*_#`~]/g, '');
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = targetLanguage === 'hi' ? 'hi-IN' : targetLanguage === 'te' ? 'te-IN' : 'en-IN';
-      utterance.rate = 0.95;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.92;
+      utterance.pitch = 1.0;
+
+      if (targetLanguage === 'hi') utterance.lang = 'hi-IN';
+      else if (targetLanguage === 'te') utterance.lang = 'te-IN';
+      else if (targetLanguage === 'ta') utterance.lang = 'ta-IN';
+      else utterance.lang = 'en-IN';
 
       utterance.onstart = () => {
         setIsSpeaking(true);
-        setCurrentlyPlayingAudioIndex(index);
+        setCurrentlyPlayingAudioIndex(messageIndex);
       };
+
       utterance.onend = () => {
         setIsSpeaking(false);
         setCurrentlyPlayingAudioIndex(null);
       };
+
       utterance.onerror = () => {
         setIsSpeaking(false);
         setCurrentlyPlayingAudioIndex(null);
@@ -297,11 +322,11 @@ export const ContextLanguageAssistant = () => {
     }
   };
 
-  // 🎤 Speech Recognition (Microphone Voice Input)
+  // 🎤 SPEECH RECOGNITION (VOICE INPUT)
   const handleToggleVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Microphone speech recognition is not supported in this browser. Please type your query in the input box.');
+      alert('Speech recognition is not supported in this browser. Please type your query.');
       return;
     }
 
@@ -310,47 +335,52 @@ export const ContextLanguageAssistant = () => {
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = targetLanguage === 'hi' ? 'hi-IN' : targetLanguage === 'te' ? 'te-IN' : 'en-IN';
-    recognition.interimResults = false;
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = targetLanguage === 'hi' ? 'hi-IN' : targetLanguage === 'te' ? 'te-IN' : 'en-IN';
 
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
+      recognition.onstart = () => setIsListening(true);
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInputQuery(transcript);
+        setIsListening(false);
+        handleSendQuery(transcript);
+      };
 
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInputQuery(transcript);
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+
+      recognition.start();
+    } catch (e) {
       setIsListening(false);
-      handleSendQuery(transcript);
-    };
+    }
+  };
 
-    recognition.onerror = () => {
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
+  // 1-Click Action to Switch Active Destination
+  const handleSwitchToDestination = async (destName) => {
+    if (!destName) return;
+    await searchAndSetGlobalPlace(destName);
+    setActiveTab('roadmap');
+    confetti({ particleCount: 70, spread: 80 });
   };
 
   return (
     <div className="space-y-6">
 
       {/* TOP HEADER */}
-      <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-black mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>AI Multilingual Guide & Camera OCR</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span>AI Travel Itinerary, Budget & Voice Guide</span>
           </div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Voice Guide, AI Chatbot & Camera Scanner
+            AI Travel Itinerary Planner & Guide
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Ask any question about <strong className="text-slate-900">{cityName}</strong>, speak into your mic, or use your camera to translate temple signboards.
+            Ask for complete travel plans, itemized budgets, hotel areas, food spots, or use camera scanning for any destination in India!
           </p>
         </div>
 
@@ -377,19 +407,19 @@ export const ContextLanguageAssistant = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* LEFT 7 COLS: INTERACTIVE AI CHATBOT */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[640px]">
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[680px]">
           
           {/* Chat Header */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
                 AI
               </div>
               <div>
                 <h4 className="text-xs font-black text-slate-900">Incredible India AI Travel Assistant</h4>
                 <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span>Active for {cityName}</span>
+                  <span>Instant Trip Plans, Budgets & Guides</span>
                 </div>
               </div>
             </div>
@@ -400,8 +430,8 @@ export const ContextLanguageAssistant = () => {
                   {
                     id: `msg-${Date.now()}`,
                     sender: 'bot',
-                    category: 'Incredible India AI Guide',
-                    text: `Namaste! I am ready for your questions about ${cityName}. How can I assist you?`,
+                    category: 'Incredible India AI Travel Assistant',
+                    text: `Namaste! Enter any destination (e.g. "I want to visit Goa" or "Plan a trip to Jaipur with budget") and I will generate your complete travel blueprint!`,
                     time: 'Just now'
                   }
                 ]);
@@ -413,13 +443,13 @@ export const ContextLanguageAssistant = () => {
             </button>
           </div>
 
-          {/* Quick Question Chips */}
-          <div className="px-4 py-2 bg-slate-50/40 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
+          {/* Quick Question & Plan Chips */}
+          <div className="px-4 py-2 bg-slate-50/60 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
             {quickChips.map((chip, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendQuery(chip.query)}
-                className="px-2.5 py-1 rounded-xl bg-white border border-slate-200 hover:border-amber-400 text-slate-700 hover:text-amber-900 whitespace-nowrap font-bold transition shadow-2xs hover:bg-amber-50/50 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-blue-500 text-slate-700 hover:text-blue-900 whitespace-nowrap font-bold transition shadow-2xs hover:bg-blue-50/50 cursor-pointer"
               >
                 {chip.label}
               </button>
@@ -427,34 +457,71 @@ export const ContextLanguageAssistant = () => {
           </div>
 
           {/* Chat Messages Stream */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/30">
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/30">
             {chatMessages.map((msg, index) => (
               <div
                 key={msg.id || index}
                 className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.sender === 'bot' && (
-                  <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-1 shadow-xs">
-                    <Bot className="w-3.5 h-3.5 text-amber-700" />
+                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-900 border border-blue-300 flex items-center justify-center flex-shrink-0 text-xs font-bold mt-1 shadow-xs">
+                    <Bot className="w-4 h-4 text-blue-700" />
                   </div>
                 )}
 
                 <div
-                  className={`max-w-[85%] rounded-2xl p-3.5 text-xs sm:text-sm leading-relaxed shadow-xs ${
+                  className={`max-w-[90%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed shadow-xs ${
                     msg.sender === 'user'
                       ? 'bg-blue-600 text-white rounded-tr-xs'
                       : 'bg-white border border-slate-200 text-slate-800 rounded-tl-xs'
                   }`}
                 >
                   {msg.sender === 'bot' && msg.category && (
-                    <span className="text-[10px] font-black uppercase text-amber-700 block mb-1">
+                    <span className="text-[10px] font-black uppercase text-blue-700 block mb-1">
                       {msg.category}
                     </span>
                   )}
 
-                  <p className="whitespace-pre-line font-medium">{msg.text}</p>
+                  <div className="whitespace-pre-line font-medium text-slate-800 leading-relaxed font-sans">
+                    {msg.text}
+                  </div>
 
-                  <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100/30 text-[10px] opacity-70">
+                  {/* 1-Click Interactive Destination Action Bar for Travel Plans */}
+                  {msg.isTravelPlan && msg.destinationName && (
+                    <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleSwitchToDestination(msg.destinationName)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <Compass className="w-3.5 h-3.5" />
+                        <span>Explore in Trip Planner</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          searchAndSetGlobalPlace(msg.destinationName);
+                          setActiveTab('hotels');
+                        }}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Book Hotels</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          searchAndSetGlobalPlace(msg.destinationName);
+                          setActiveTab('rentals');
+                        }}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                      >
+                        <Car className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Rent Cabs / Buses</span>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100/50 text-[10px] opacity-75">
                     <span>{msg.time}</span>
                     {msg.sender === 'bot' && (
                       <button
@@ -462,25 +529,25 @@ export const ContextLanguageAssistant = () => {
                         className="p-1 rounded hover:bg-slate-100 text-slate-600 transition flex items-center gap-1 cursor-pointer"
                         title="Listen to audio"
                       >
-                        <Volume2 className="w-3 h-3 text-amber-600" />
-                        <span className="font-bold">Audio</span>
+                        <Volume2 className="w-3 h-3 text-blue-600" />
+                        <span className="font-bold">{isSpeaking && currentlyPlayingAudioIndex === index ? 'Speaking...' : 'Listen Audio'}</span>
                       </button>
                     )}
                   </div>
                 </div>
 
                 {msg.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold mt-1 shadow-xs">
-                    <User className="w-3.5 h-3.5" />
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-xs font-bold mt-1 shadow-xs">
+                    <User className="w-4 h-4" />
                   </div>
                 )}
               </div>
             ))}
 
             {isLoading && (
-              <div className="flex items-center gap-2 text-slate-400 text-xs pl-2">
-                <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-                <span className="font-bold">AI Assistant is thinking & verifying {cityName} records...</span>
+              <div className="flex items-center gap-2 text-slate-500 text-xs pl-2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <span className="font-bold">Generating complete itinerary & budget blueprint...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -498,27 +565,25 @@ export const ContextLanguageAssistant = () => {
               type="button"
               onClick={handleToggleVoiceInput}
               className={`p-3 rounded-2xl transition cursor-pointer flex-shrink-0 ${
-                isListening
-                  ? 'bg-red-500 text-white animate-pulse'
-                  : 'bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200'
+                isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
-              title={isListening ? 'Listening... click to stop' : 'Click to speak question via microphone'}
+              title="Speak into microphone"
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-blue-600" />}
             </button>
 
             <input
               type="text"
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
-              placeholder={`Ask about ${cityName} customs, history, food, aarti timings, or transport...`}
-              className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:bg-white focus:border-amber-500 transition"
+              placeholder={`Ask for any destination plan: "I want to visit Goa" or "Plan a trip to Jaipur"...`}
+              className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500"
             />
 
             <button
               type="submit"
-              disabled={isLoading || !inputQuery.trim()}
-              className="p-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 rounded-2xl font-black transition shadow-md active:scale-95 flex-shrink-0 cursor-pointer"
+              disabled={!inputQuery.trim() || isLoading}
+              className="p-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-2xl transition shadow-md flex-shrink-0 cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -526,198 +591,177 @@ export const ContextLanguageAssistant = () => {
 
         </div>
 
-        {/* RIGHT 5 COLS: 📷 LIVE CAMERA & AR SIGN SCANNER */}
+        {/* RIGHT 5 COLS: 📷 LIVE CAMERA & SIGNBOARD OCR SCANNER + PHRASEBOOK */}
         <div className="lg:col-span-5 space-y-6">
-          
-          {/* CAMERA SCANNER CARD */}
-          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+
+          {/* 📷 CAMERA SCANNER CARD */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="p-2 bg-amber-100 text-amber-900 rounded-xl">
-                  <Camera className="w-4 h-4 text-amber-700" />
-                </span>
-                <div>
-                  <h4 className="text-sm font-black text-slate-900 font-heritage">Live Camera & Sign Translator</h4>
-                  <p className="text-[10px] text-slate-500 font-medium">Scan temple signs, stone notices, or Hindi street menus with your phone camera.</p>
-                </div>
+                <Camera className="w-4 h-4 text-blue-600" />
+                <h4 className="text-sm font-black text-slate-900">Live Camera & Signboard Translator</h4>
               </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-800 rounded-full">
+                OCR + AI
+              </span>
             </div>
 
-            {/* LIVE CAMERA VIEWFINDER / CAPTURE CONTAINER */}
-            <div className="relative rounded-2xl border-2 border-dashed border-amber-400 bg-slate-950 p-4 text-white overflow-hidden min-h-[200px] flex flex-col justify-center items-center text-center space-y-3">
+            {/* Viewfinder / Preview Area */}
+            <div className="relative rounded-2xl overflow-hidden bg-slate-950 min-h-[200px] flex items-center justify-center border border-slate-200">
               
-              {/* 1. Live Video Stream */}
-              {isLiveCameraActive ? (
-                <div className="relative w-full rounded-xl overflow-hidden shadow-inner">
-                  <video ref={videoRef} autoPlay playsInline className="w-full h-48 object-cover rounded-xl" />
-                  <div className="absolute inset-0 border-2 border-amber-400/80 rounded-xl pointer-events-none animate-pulse"></div>
-                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2 z-10">
-                    <button
-                      onClick={handleCaptureLivePhoto}
-                      className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Scan className="w-3.5 h-3.5" />
-                      <span>Capture & Translate</span>
-                    </button>
-                    <button
-                      onClick={handleStopLiveCamera}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl cursor-pointer"
-                    >
-                      <StopCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ) : capturedImage ? (
-                /* 2. Captured Photo Preview */
-                <div className="relative w-full rounded-xl overflow-hidden">
-                  <img src={capturedImage} alt="Captured Sign" className="w-full h-44 object-cover rounded-xl" />
-                  {isProcessingOcr && (
-                    <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
-                      <span className="text-xs font-bold text-amber-300">Extracting & Translating Text...</span>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* 3. Preset Sample Signboard Preview */
-                <div className="w-full space-y-3">
-                  <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
-                    <span className="text-[9px] uppercase font-bold text-amber-400 block mb-1">Preset Signboard ({sampleSigns[activeSignIndex].title})</span>
-                    <p className="font-heritage text-xs sm:text-sm font-black text-amber-100">
-                      "{sampleSigns[activeSignIndex].nativeText}"
-                    </p>
-                  </div>
-
-                  <div className="flex justify-center gap-1 overflow-x-auto pb-1">
-                    {sampleSigns.map((s, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setActiveSignIndex(i);
-                          setOcrResult(null);
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition ${
-                          activeSignIndex === i ? 'bg-amber-500 text-slate-950' : 'bg-white/10 text-slate-300 hover:bg-white/20'
-                        }`}
-                      >
-                        Sample {i + 1}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* CAMERA ACTION CONTROLS */}
-              {!isLiveCameraActive && (
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-1 w-full">
-                  
-                  {/* Open Device Camera Button */}
-                  <button
-                    onClick={handleStartLiveCamera}
-                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>Open Live Camera</span>
-                  </button>
-
-                  {/* Native Mobile Camera Snap Button */}
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Snap / Upload Photo</span>
-                  </button>
-
-                  {/* Hidden Mobile Native Camera Input */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileUpload}
-                    className="hidden"
+              {/* 1. Live Camera Feed */}
+              {isLiveCameraActive && (
+                <div className="relative w-full h-56">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
                   />
-
-                  {/* Translate Current Sample Button */}
-                  {!capturedImage && (
-                    <button
-                      onClick={() => {
-                        setIsProcessingOcr(true);
-                        setTimeout(() => {
-                          setIsProcessingOcr(false);
-                          setOcrResult({
-                            detectedLanguage: 'Hindi / Devanagari Script',
-                            extractedText: sampleSigns[activeSignIndex].nativeText,
-                            translation: sampleSigns[activeSignIndex].englishTranslation,
-                            culturalContext: sampleSigns[activeSignIndex].culturalInsight
-                          });
-                          confetti({ particleCount: 50, spread: 60 });
-                        }, 800);
-                      }}
-                      className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition cursor-pointer"
-                    >
-                      <span>Translate Sample</span>
-                    </button>
-                  )}
+                  <div className="absolute inset-4 border-2 border-amber-400/70 rounded-xl pointer-events-none animate-pulse"></div>
+                  <div className="absolute top-2 left-2 px-2 py-0.5 bg-red-600 text-white text-[9px] font-black rounded-md flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                    <span>LIVE</span>
+                  </div>
                 </div>
               )}
 
-              {cameraError && (
-                <p className="text-[11px] text-amber-300 font-medium mt-1">{cameraError}</p>
+              {/* 2. Captured Image Preview */}
+              {!isLiveCameraActive && capturedImage && (
+                <div className="relative w-full h-56">
+                  <img
+                    src={capturedImage}
+                    alt="Captured Signboard"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {/* 3. Empty Initial State with Sample Sign */}
+              {!isLiveCameraActive && !capturedImage && (
+                <div className="p-4 text-center space-y-2 text-slate-400">
+                  <Scan className="w-8 h-8 mx-auto text-slate-500" />
+                  <p className="text-xs text-slate-300 font-medium">
+                    Point your mobile camera at ancient temple scripts, notices, or menus to translate instantly.
+                  </p>
+                </div>
+              )}
+
+              {/* Processing Spinner */}
+              {isProcessingOcr && (
+                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+                  <span className="text-xs font-bold">Scanning text & translating...</span>
+                </div>
               )}
             </div>
 
-            {/* TRANSLATION OCR RESULT CARD */}
+            {/* Camera Control Buttons */}
+            <div className="flex gap-2">
+              {!isLiveCameraActive ? (
+                <button
+                  onClick={handleStartLiveCamera}
+                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Start Live Camera</span>
+                </button>
+              ) : (
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={handleCaptureLivePhoto}
+                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                  >
+                    <Scan className="w-3.5 h-3.5" />
+                    <span>Snap & Translate</span>
+                  </button>
+                  <button
+                    onClick={handleStopLiveCamera}
+                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    <StopCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile Native Camera Upload */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                title="Take photo from mobile camera or gallery"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload</span>
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* OCR Translation Result Box */}
             {ocrResult && (
-              <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl space-y-2 animate-fadeIn text-xs shadow-sm">
-                <div className="flex items-center justify-between text-emerald-950 font-black">
-                  <div className="flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-emerald-600" />
-                    <span>Optical OCR Translation:</span>
-                  </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                    {ocrResult.detectedLanguage}
+              <div className="p-4 bg-amber-50/90 border border-amber-200 rounded-2xl space-y-2 animate-fadeIn text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-amber-800">
+                    Detected: {ocrResult.detectedLang} ({ocrResult.confidence})
                   </span>
+                  <button
+                    onClick={() => handlePlayVoice(ocrResult.translatedText)}
+                    className="text-amber-700 hover:text-amber-900 font-bold flex items-center gap-1"
+                  >
+                    <Volume2 className="w-3 h-3" />
+                    <span>Listen</span>
+                  </button>
                 </div>
 
-                <div className="bg-white p-3 rounded-xl border border-emerald-200 space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">English Translation</span>
-                  <p className="text-slate-900 font-bold leading-relaxed">{ocrResult.translation}</p>
+                <div className="font-serif italic text-slate-700 border-b border-amber-200/60 pb-1.5">
+                  "{ocrResult.detectedText}"
                 </div>
 
-                <div className="text-[11px] text-emerald-900 font-medium pl-1">
+                <div>
+                  <strong className="text-slate-900 block font-bold text-xs">English Translation:</strong>
+                  <p className="text-slate-800 font-medium mt-0.5">{ocrResult.translatedText}</p>
+                </div>
+
+                <div className="text-[11px] text-amber-900 bg-white/70 p-2 rounded-xl border border-amber-200/50">
                   💡 <strong>Cultural Context:</strong> {ocrResult.culturalContext}
                 </div>
               </div>
             )}
           </div>
 
-          {/* ESSENTIAL AUDIO PHRASEBOOK */}
-          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          {/* 📖 ESSENTIAL PHRASEBOOK */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-amber-600" />
-                <h4 className="text-xs font-black uppercase text-slate-900">Essential Travel Phrasebook</h4>
+                <BookOpen className="w-4 h-4 text-blue-600" />
+                <h4 className="text-sm font-black text-slate-900">Essential Traveler Phrasebook</h4>
               </div>
-              <span className="text-[10px] font-bold text-slate-400">Tap to listen</span>
             </div>
 
             <div className="space-y-2">
-              {phrasebook.map((item, idx) => (
+              {phrasebook.map((p, idx) => (
                 <div
                   key={idx}
-                  className="p-2.5 bg-slate-50 hover:bg-amber-50/60 border border-slate-200 hover:border-amber-300 rounded-2xl flex items-center justify-between gap-2 transition text-xs"
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs hover:bg-slate-100/80 transition"
                 >
                   <div>
-                    <span className="font-black text-slate-900 block">{item.phrase}</span>
-                    <span className="text-[10px] text-slate-500 font-medium">{item.meaning} • {item.hindi}</span>
+                    <div className="font-black text-slate-900">{p.phrase}</div>
+                    <div className="text-[11px] text-slate-500">{p.meaning}</div>
+                    <div className="text-[11px] text-blue-700 font-bold mt-0.5">{p.hindi}</div>
                   </div>
 
                   <button
-                    onClick={() => handlePlayVoice(item.audio, `phrase-${idx}`)}
-                    className="p-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl transition shadow-sm flex-shrink-0 cursor-pointer"
-                    title="Play Pronunciation"
+                    onClick={() => handlePlayVoice(p.hindi)}
+                    className="p-2 rounded-xl bg-white border border-slate-200 hover:border-blue-400 text-blue-600 shadow-2xs transition cursor-pointer"
+                    title="Play Audio"
                   >
                     <Volume2 className="w-3.5 h-3.5" />
                   </button>

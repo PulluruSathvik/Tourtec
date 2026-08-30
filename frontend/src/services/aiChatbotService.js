@@ -1,7 +1,7 @@
-// Comprehensive Multi-Source AI Travel Intelligence Engine with Wikipedia Knowledge API
+// Comprehensive Multi-Source AI Travel Intelligence Engine for Incredible India
 
 // 1. Fetch live Wikipedia Summary for any landmark/topic
-const fetchWikipediaSummary = async (queryTerm) => {
+export const fetchWikipediaSummary = async (queryTerm) => {
   try {
     const cleanTerm = encodeURIComponent(queryTerm.replace(/\s+/g, '_'));
     const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${cleanTerm}`);
@@ -22,370 +22,504 @@ const fetchWikipediaSummary = async (queryTerm) => {
   return null;
 };
 
-// 2. Curated Landmark Knowledge Matrix for Indian Sights
-const LANDMARK_DB = {
-  charminar: {
-    name: 'Charminar',
-    city: 'Hyderabad',
-    overview: 'Built in 1591 by Muhammad Quli Qutb Shah to mark the eradication of plague. A masterpiece of Indo-Islamic architecture with four grand arches and 48.7m minarets.',
-    howToGo: 'Take the Hyderabad Metro to MGBS / Charminar Station (Green Line), or hail an Auto/Rapido (₹30–₹50 from central Hyderabad).',
-    timings: '09:00 AM to 05:30 PM daily. Evening illuminated view till 10:00 PM.',
-    entryFee: '₹25 for Indians, ₹300 for Foreigners, Free for children under 15.',
-    highlights: [
-      'Climb the spiral staircase to the upper gallery for panoramic Old City views.',
-      'Shop for famous lacquer bangles & pearls at Laad Bazaar (Choodi Bazaar) right beside the monument.',
-      'Sip authentic Irani Chai with Osmania Biscuits at Nimrah Cafe directly facing Charminar.',
-      'Taste legendary Mutton Biryani at Hotel Shadab or Shah Ghouse nearby.'
+// 2. Comprehensive Destination Travel Intelligence Knowledge Matrix (Plans, Budgets, Stays, Food, Commute)
+export const DESTINATIONS_DB = {
+  varanasi: {
+    name: 'Varanasi',
+    state: 'Uttar Pradesh',
+    tagline: 'The Spiritual Capital of India & City of Light',
+    idealDays: '2 to 3 Days',
+    bestTime: 'October to March (Pleasant weather & grand Dev Deepawali festival)',
+    itinerary: [
+      {
+        day: 'Day 1: Spiritual Awakening & Ganga Aarti',
+        morning: '🌅 05:30 AM Sunrise wooden boat ride on holy Ganga from Assi Ghat to Manikarnika Ghat. Attend Subah-e-Banaras morning music and yoga at Assi Ghat.',
+        afternoon: '🛕 10:30 AM VIP Darshan at Kashi Vishwanath Jyotirlinga Temple Corridor. Visit Annapurna Temple & Vishalakshi Shaktipeeth.',
+        evening: '🪔 05:45 PM Front-row seats at Dashashwamedh Ghat for the world-famous Grand Ganga Aarti. Dinner at Godowlia street market.'
+      },
+      {
+        day: 'Day 2: Buddhist Heritage & Ancient Alleys',
+        morning: '☸️ 08:30 AM Excursion to Sarnath (10km) where Lord Buddha preached his first sermon. Visit Dhamek Stupa, Mulagandha Kuti Vihar & Sarnath Museum (Ashoka Lion Capital).',
+        afternoon: '🛍️ 02:00 PM Heritage walk through narrow Thatheri Bazaar galis for authentic Banarasi Silk Sarees & brass handicrafts.',
+        evening: '🎶 06:00 PM Classical music performance or sunset boat cruise to Namo Ghat with iconic folded hands sculptures.'
+      }
     ],
-    proTip: 'Visit before 11:00 AM on weekdays to avoid intense afternoon traffic and queue times.'
+    budget: {
+      soloBackpacker: '₹1,500 – ₹2,200 / day',
+      coupleComfort: '₹3,500 – ₹5,500 / day (total for 2)',
+      familyLuxury: '₹8,000 – ₹15,000 / day',
+      breakdown: {
+        stay: 'Hostels ₹450–₹1,000 | 3-Star Hotels ₹1,800–₹3,500 | Heritage Haveli ₹6,000+',
+        food: '₹300 – ₹700 per person/day (Kachori-Jalebi, Lassi, Thali)',
+        transport: '₹150 – ₹400/day (E-rickshaws ₹20–₹50, Shared Autos)',
+        activities: 'Boat ride ₹150–₹300 | Sarnath Ticket ₹25 | Temple Darshan Free'
+      }
+    },
+    stays: [
+      '🌊 Riverfront Heritage: BrijRama Palace (Darbhanga Ghat), Palace on Ganges',
+      '🎒 Backpacker Hostels: Zostel Varanasi (Near Assi Ghat), Moustache Hostel',
+      '🕉️ Temple Dharamshala: Kashi Vishwanath Devasthanam Guest House',
+      '🏨 Cantonment Comfort: Taj Ganges, Radisson Hotel Varanasi'
+    ],
+    food: [
+      '🍛 Ram Bhandar / Netaji: Desi Ghee Kachori & Crispy Jalebi for breakfast',
+      '🥛 Blue Lassi / Pahalwan Lassi: Thick Kulhad Malai Lassi with rabri & saffron',
+      '🍲 Keshari Restaurant: Authentic Pure Vegetarian North & South Indian Thali',
+      '🍃 Keshav Tambool: Royal Banarasi Meetha Paan'
+    ],
+    howToReach: 'Direct flights to Lal Bahadur Shastri Airport (VNS). Varanasi Junction (BSB) / Pt. Deen Dayal Upadhyaya Junction (DDU) are major railway hubs.',
+    proTips: [
+      'Strict temple dress code: Dhoti/Kurta for men, Sarees/Salwar for women at sanctum.',
+      'Leave mobile phones and leather belts in free lockers at Gate #4 before temple entry.',
+      'Reach Dashashwamedh Ghat by 05:45 PM for prime seating before the crowd swells.'
+    ]
   },
-  golconda: {
-    name: 'Golconda Fort',
-    city: 'Hyderabad',
-    overview: 'A 16th-century fortress city renowned for acoustic engineering (a clap at the entry Fateh Darwaza can be heard 1km away at the hilltop Bala Hissar) and world-famous diamond trade (Koh-i-Noor, Hope Diamond).',
-    howToGo: 'Located in western Hyderabad. Direct RTC buses (65G, 66G) from Koti/Mehdipatnam, or Uber/Ola cab (approx. 11km from city center).',
-    timings: '09:00 AM to 05:30 PM. Sound & Light Show: 06:30 PM (English) & 07:45 PM (Hindi).',
-    entryFee: '₹25 for Indians, ₹300 for Foreigners. Sound & Light Show: ₹140.',
-    highlights: ['Fateh Darwaza acoustic dome', 'Royal palace ruins & Rani Mahal', 'Bala Hissar panoramic hilltop view', 'Sound & Light evening laser show'],
-    proTip: 'Wear sturdy walking shoes as there are over 360 stone steps to the summit. Carry drinking water.'
+
+  goa: {
+    name: 'Goa',
+    state: 'Goa',
+    tagline: 'Sun-Kissed Beaches, Portuguese Heritage & Vibrant Nightlife',
+    idealDays: '3 to 4 Days',
+    bestTime: 'November to February (Pleasant coastal breeze, watersports & beach festivals)',
+    itinerary: [
+      {
+        day: 'Day 1: North Goa Beaches & Watersports',
+        morning: '🏖️ 09:00 AM Parasailing, Jet-Ski and Banana boat ride at Calangute & Baga Beach.',
+        afternoon: '🏰 02:00 PM Explore Portuguese Aguada Fort and lighthouse with panoramic Arabian Sea views.',
+        evening: '🌅 05:30 PM Sunset at Anjuna / Vagator Beach cliffs followed by dinner at Curlies or Tito’s Lane.'
+      },
+      {
+        day: 'Day 2: UNESCO Heritage, Churches & Latin Quarter',
+        morning: '⛪ 09:30 AM Visit Old Goa: Basilica of Bom Jesus (St. Francis Xavier relic) & Se Cathedral.',
+        afternoon: '🎨 01:30 PM Photowalk through Fontainhas (Panaji) vibrant yellow & blue Portuguese heritage lanes.',
+        evening: '🚢 06:30 PM Mandovi River Sunset Dinner Cruise with live Goan folk dance & music.'
+      },
+      {
+        day: 'Day 3: South Goa Tranquility & Waterfalls',
+        morning: '💦 08:00 AM Day trip to the majestic Dudhsagar 4-tiered waterfall inside Bhagwan Mahavir Sanctuary.',
+        afternoon: '🌴 02:30 PM Relax on serene white sands of Palolem & Colva Beach in South Goa.',
+        evening: '🕯️ 07:00 PM Candlelight beach shack dinner with fresh Kingfish Rawa Fry and Goan Prawn Curry.'
+      }
+    ],
+    budget: {
+      soloBackpacker: '₹2,000 – ₹3,000 / day',
+      coupleComfort: '₹5,000 – ₹8,500 / day (total for 2)',
+      familyLuxury: '₹12,000 – ₹25,000 / day',
+      breakdown: {
+        stay: 'Hostels ₹600–₹1,200 | Beach Cottages ₹2,200–₹4,500 | 5-Star Luxury ₹8,000+',
+        food: '₹600 – ₹1,400 per person/day (Shacks, Seafood, Cafes)',
+        transport: 'Scooter Rental ₹350–₹500/day | Thar / Cab ₹1,800–₹3,000/day',
+        activities: 'Watersports combo ₹1,200 | Mandovi Cruise ₹500 | Scuba Diving ₹2,500'
+      }
+    },
+    stays: [
+      '🏖️ North Goa (Nightlife & Parties): Baga, Calangute, Anjuna (Zostel, W Goa)',
+      '🌴 South Goa (Peace & Couples): Palolem, Colva, Cavellossim (Taj Exotica, ITC Grand Goa)',
+      '🎨 Heritage & Culture: Fontainhas Panaji (WelcomHeritage Panjim Inn)'
+    ],
+    food: [
+      '🐟 Goan Fish Curry Thali & Kingfish Rawa Fry at Ritz Classic / Anand Seafood',
+      '🍞 Pork/Chicken Vindaloo & Poi Bread at Mum’s Kitchen Panaji',
+      '🍰 Bebinca Layered Cake & Feni Cocktails at Fisherman’s Wharf'
+    ],
+    howToReach: 'Direct flights to Dabolim Airport (GOI) or Manohar International Airport Mopa (GOX). Trains to Madgaon (MAO) or Thivim (THVM).',
+    proTips: [
+      'Rent a two-wheeler (Scooter) with a valid driving license for the most flexible travel.',
+      'Always negotiate watersports package deals directly on the beach.',
+      'South Goa is ideal for family & peace; North Goa is best for nightlife and parties.'
+    ]
   },
-  'hussain sagar': {
-    name: 'Hussain Sagar Lake & Buddha Statue',
-    city: 'Hyderabad',
-    overview: 'Heart-shaped lake built in 1563 by Ibrahim Quli Qutb Shah. Features the world’s tallest monolithic stone statue of Gautama Buddha (18 meters) standing in the center on Gibraltar Rock.',
-    howToGo: 'Located along Necklace Road / Tank Bund. Accessible via Necklace Road MMTS station or local autos.',
-    timings: 'Boating open 08:00 AM to 10:00 PM daily. Musical Dancing Laser Fountain at 07:00 PM.',
-    entryFee: 'Lake entry is free. Mechanized boat to Buddha statue: ₹55 per person. Speedboat: ₹350.',
-    highlights: ['Speedboat ride to Buddha statue', 'Evening stroll along Tank Bund with city skyline views', 'Eat Street food court', 'Lumbini Park laser show'],
-    proTip: 'Visit between 05:30 PM and 08:00 PM for sunset over the water and illuminated evening lights.'
+
+  hyderabad: {
+    name: 'Hyderabad',
+    state: 'Telangana',
+    tagline: 'City of Pearls, Nizam Royal Palaces & World-Famous Biryani',
+    idealDays: '2 to 3 Days',
+    bestTime: 'October to March (Pleasant winter climate)',
+    itinerary: [
+      {
+        day: 'Day 1: Nizam Palaces, Charminar & Pearls',
+        morning: '🏰 09:00 AM Explore historic Charminar & climb to the upper gallery. Sip Irani Chai at Nimrah Cafe.',
+        afternoon: '🦪 01:00 PM Shop for authentic Basra pearls & lacquer bangles at Laad Bazaar. Lunch: Legendary Mutton Dum Biryani at Hotel Shadab.',
+        evening: '👑 03:30 PM Tour royal Chowmahalla Palace and Salar Jung Museum. Sunset stroll at Hussain Sagar Lake & Buddha Statue.'
+      },
+      {
+        day: 'Day 2: Golconda Fortress & Film City',
+        morning: '🛡️ 08:30 AM Explore acoustic architecture of Golconda Fort & royal Qutb Shahi Tombs.',
+        afternoon: '🎬 01:00 PM Excursion to Ramoji Film City (World’s largest film studio complex) or Shilparamam Arts Village.',
+        evening: '✨ 07:00 PM Sound & Light laser show at Golconda or luxury dinner at Taj Falaknuma Palace.'
+      }
+    ],
+    budget: {
+      soloBackpacker: '₹1,400 – ₹2,000 / day',
+      coupleComfort: '₹3,500 – ₹6,000 / day (total for 2)',
+      familyLuxury: '₹9,000 – ₹18,000 / day',
+      breakdown: {
+        stay: 'Budget Hotels ₹900–₹1,800 | 3-Star Hotels ₹2,500–₹4,500 | Palace Stays ₹12,000+',
+        food: '₹400 – ₹900 per person/day (Biryani ₹250, Irani Chai ₹25, Haleem ₹200)',
+        transport: 'Metro / Auto ₹150–₹350/day | App Cabs ₹600–₹1,200/day',
+        activities: 'Golconda Fort ₹25 | Salar Jung ₹50 | Ramoji Studio ₹1,350'
+      }
+    },
+    stays: [
+      '👑 Royal Luxury: Taj Falaknuma Palace, ITC Kohenur (Hitech City)',
+      '🏙️ Central & Upscale: Banjara Hills, Jubilee Hills (Park Hyatt, Radisson)',
+      '🛺 Budget & Historic: Abids, Nampally (Near Charminar & Station, ₹800–₹1,600)'
+    ],
+    food: [
+      '🍗 Authentic Hyderabadi Dum Biryani: Hotel Shadab, Bawarchi (RTC X Roads), Cafe Bahar',
+      '☕ Irani Chai with Osmania Biscuits: Nimrah Cafe (Right facing Charminar)',
+      '🍲 Seasonal Mutton Haleem: Pista House, Shah Ghouse',
+      '🍨 Famous Ice Cream: Mozamjahi Market handmade fruit ice creams'
+    ],
+    howToReach: 'Direct flights to Rajiv Gandhi International Airport (HYD). Secunderabad (SC) & Hyderabad Deccan (HYB) are major railway stations.',
+    proTips: [
+      'Use the Hyderabad Metro (Red & Blue lines) to bypass peak hour city traffic easily.',
+      'Buy pearls only from certified government-approved stores in Pathergatti with authenticity certificates.',
+      'Visit Golconda Fort in the morning before noon to avoid climbing 360 steps in the sun.'
+    ]
   },
-  'kashi vishwanath': {
-    name: 'Kashi Vishwanath Temple',
-    city: 'Varanasi',
-    overview: 'One of the twelve sacred Jyotirlingas of Lord Shiva. The golden spire was donated by Maharaja Ranjit Singh. The newly inaugurated corridor directly links the temple to the holy River Ganga at Lalita Ghat.',
-    howToGo: 'Enter via Gate #4 (Godowlia side) or Lalita Ghat Corridor. Free battery-operated e-rickshaws available for seniors.',
-    timings: 'Mangala Aarti: 03:00 AM – 04:00 AM. General Darshan: 04:00 AM – 11:00 PM. Sandhya Aarti: 07:00 PM.',
-    entryFee: 'General Darshan is FREE. VIP Sugam Darshan: ₹300 (book online on temple trust portal).',
-    highlights: ['Spiritual Darshan of Jyotirlinga', 'Kashi Vishwanath Corridor promenade to Ganga', 'Ganga Jal offering ritual'],
-    proTip: 'Strict dress code: Traditional Indian wear (Dhoti/Kurta for men, Saree/Churidar for women). Phones and leather items must be left in free lockers at Gate #4.'
+
+  jaipur: {
+    name: 'Jaipur',
+    state: 'Rajasthan',
+    tagline: 'The Pink City of Royal Forts, Palaces & Rajasthani Royalty',
+    idealDays: '2 to 3 Days',
+    bestTime: 'October to March (Royal desert winters & vibrant cultural fairs)',
+    itinerary: [
+      {
+        day: 'Day 1: Forts & Palaces of the Royals',
+        morning: '🐘 08:30 AM Elephant/Jeep ride up to magnificent Amer Fort (Sheesh Mahal Mirror Palace). Stop for photos at Jal Mahal (Water Palace).',
+        afternoon: '🏰 01:00 PM Visit Nahargarh Fort & Jaigarh Fort (World’s largest cannon on wheels). Rajasthani Dal Baati Churma lunch.',
+        evening: '🪟 05:00 PM Admire the 953 honeycomb windows of Hawa Mahal (Palace of Winds) & vibrant Johari Bazaar for gemstones.'
+      },
+      {
+        day: 'Day 2: Astronomy, City Palace & Cultural Village',
+        morning: '🔭 09:00 AM Tour City Palace royal museum & UNESCO astronomical observatory Jantar Mantar.',
+        afternoon: '🛍️ 02:00 PM Shop for handcrafted Blue Pottery, block-print quilts, and Mojari leather footwear at Bapu Bazaar.',
+        evening: '💃 06:30 PM Grand Rajasthani folk dance, puppet shows & royal thali banquet at Chokhi Dhani ethnic resort.'
+      }
+    ],
+    budget: {
+      soloBackpacker: '₹1,600 – ₹2,400 / day',
+      coupleComfort: '₹4,000 – ₹6,500 / day (total for 2)',
+      familyLuxury: '₹10,000 – ₹22,000 / day',
+      breakdown: {
+        stay: 'Hostels ₹500–₹1,100 | Heritage Haveli Hotels ₹2,200–₹4,500 | Royal Palaces ₹12,000+',
+        food: '₹450 – ₹950 per person/day (Dal Baati Thali, Pyaz Kachori, Lassi)',
+        transport: 'E-Rickshaw ₹150–₹300/day | Day Cab Rental ₹1,600/day',
+        activities: 'Composite Monument Ticket ₹100 (Indians) / ₹500 (Foreigners) | Chokhi Dhani ₹900'
+      }
+    },
+    stays: [
+      '👑 Heritage Havelis: Alsisar Haveli, Samode Haveli, Shahpura House',
+      '🎒 Backpacker Hostels: Zostel Jaipur, Moustache Jaipur (MI Road)',
+      '🏰 Palace Luxury: Rambagh Palace, ITC Rajputana'
+    ],
+    food: [
+      '🍛 Traditional Dal Baati Churma & Gatte ki Sabzi at Laxmi Misthan Bhandar (LMB) Johari Bazaar',
+      '🧅 Rawat Mishthan Bhandar: Iconic crispy Pyaaz Kachori & Mawa Kachori',
+      '🥛 Lassiwala (MI Road): Original thick creamy kulhad lassi (Shop #312 since 1944)'
+    ],
+    howToReach: 'Jaipur International Airport (JAI) connects major metros. Jaipur Junction (JP) is well-connected by Shatabdi and Vande Bharat trains.',
+    proTips: [
+      'Buy the Jaipur Composite Ticket (₹100 for Indians / ₹500 for foreigners) which covers Amer Fort, Hawa Mahal, Jantar Mantar, Nahargarh, and Albert Hall Museum for 2 days!',
+      'Dress modestly while entering temples and royal courtyards.'
+    ]
   },
-  'dashashwamedh ghat': {
-    name: 'Dashashwamedh Ghat (Ganga Aarti)',
-    city: 'Varanasi',
-    overview: 'The primary and oldest sacred ghat of Varanasi. Legend says Lord Brahma created it to welcome Lord Shiva and sacrificed ten horses (Dasa-Ashwamedha) here.',
-    howToGo: 'Walk 300m from Godowlia crossing (vehicle-free zone). Local rickshaws drop at Godowlia stand.',
-    timings: 'Ganga Aarti starts daily at 06:30 PM in summer (06:00 PM in winter). Takes 45 minutes.',
-    entryFee: 'FREE viewing from the ghat steps. Wooden boat seat: ₹150–₹300. UP Tourism Solar Boat: ₹250.',
-    highlights: ['Seven priests performing synchronized brass lamp Aarti', 'Floating earthen Diya candles on Ganga', 'Subah-e-Banaras morning classical concerts at Assi Ghat'],
-    proTip: 'Arrive at the ghat by 05:45 PM to get prime front-row seating on the stone steps or board an authorized boat before 06:00 PM.'
+
+  agra: {
+    name: 'Agra',
+    state: 'Uttar Pradesh',
+    tagline: 'Home of the Taj Mahal & Mughal Architectural Marvels',
+    idealDays: '1 to 2 Days',
+    bestTime: 'October to March',
+    itinerary: [
+      {
+        day: 'Day 1: The Wonder of the World & Mughal Citadel',
+        morning: '🤍 06:00 AM Sunrise entry at the Taj Mahal (East Gate) for golden light photography without crowds.',
+        afternoon: '🏰 11:30 AM Tour the massive red sandstone Agra Fort (Jahangir Palace & Diwan-i-Khas). Taste authentic Agra Petha.',
+        evening: '🌅 05:00 PM Sunset views of the Taj Mahal across the Yamuna River from Mehtab Bagh gardens.'
+      },
+      {
+        day: 'Day 2: Ghost City & Royal Tomb',
+        morning: '🕌 09:00 AM Day excursion to Fatehpur Sikri (Buland Darwaza & Salim Chishti Dargah, 38km).',
+        afternoon: '🤍 02:30 PM Visit Tomb of I’timad-ud-Daulah (The Baby Taj) and Akbar’s Tomb at Sikandra.',
+        evening: '🛍️ 06:00 PM Shop for Pietra Dura marble inlay souvenirs and handcrafted leather items at Sadar Bazaar.'
+      }
+    ],
+    budget: {
+      soloBackpacker: '₹1,500 – ₹2,200 / day',
+      coupleComfort: '₹3,500 – ₹5,500 / day',
+      familyLuxury: '₹8,500 – ₹18,000 / day',
+      breakdown: {
+        stay: 'Hostels ₹500–₹1,000 | Taj Ganj Hotels ₹1,800–₹3,200 | Luxury Oberoi Amarvilas ₹25,000+',
+        food: '₹350 – ₹800/day (Bedai breakfast, Mughlai dishes, Petha)',
+        transport: 'Electric Autos & Cabs ₹300–₹800/day',
+        activities: 'Taj Mahal ₹50 (+₹200 main dome) | Agra Fort ₹50 | Fatehpur Sikri ₹50'
+      }
+    },
+    stays: [
+      '👑 Taj View Luxury: The Oberoi Amarvilas (Direct balcony view of Taj), ITC Mughal',
+      '🎒 Budget & Backpacker: Taj Ganj Area, Joey’s Hostel, Zostel Agra'
+    ],
+    food: [
+      '🍬 Panchhi Petha: Kesar Angoori, Paan Petha, Chocolate Petha',
+      '🥘 Authentic Mughlai: Pinch of Spice, Peshawri at ITC Mughal',
+      '🥞 Deviram Sweets: Bedai & Spicy Aloo with Jalebi breakfast'
+    ],
+    howToReach: 'Gatimaan Express / Vande Bharat Express from Delhi to Agra Cantt takes only 90 minutes. Taj Express Highway connects Delhi (3.5 hrs drive).',
+    proTips: [
+      'TAJ MAHAL IS STRICTLY CLOSED ON FRIDAYS for general visitors.',
+      'Book online tickets in advance on the ASI portal (asi.nic.in) to skip the 1-hour ticket queue.',
+      'Tripods, drones, big bags, and food items are prohibited inside the Taj Mahal complex.'
+    ]
   },
-  'taj mahal': {
-    name: 'Taj Mahal',
-    city: 'Agra',
-    overview: 'UNESCO World Heritage monument and one of the New 7 Wonders of the World. Built in ivory-white marble by Emperor Shah Jahan in 1632 for his wife Mumtaz Mahal.',
-    howToGo: 'Located in Taj Ganj, Agra. Eco-friendly battery carts (₹10) transport visitors from the parking area to East/West Gates.',
-    timings: '06:00 AM to 06:30 PM (Sunrise to Sunset). STRICTLY CLOSED ON FRIDAYS.',
-    entryFee: '₹50 for Indians (+₹200 for main mausoleum), ₹1,100 for Foreigners. Free for children below 15.',
-    highlights: ['Central marble dome & reflecting pool gardens', 'Pietra Dura floral gemstone inlay work', 'Mehtab Bagh sunset view across Yamuna River'],
-    proTip: 'Enter through the East Gate at sunrise (06:00 AM) for golden morning light with minimal crowds and stunning photography.'
-  },
-  'kanaka durga': {
-    name: 'Kanaka Durga Temple',
-    city: 'Vijayawada',
-    overview: 'Ancient temple dedicated to Goddess Kanaka Durga situated on Indrakeeladri Hill overlooking the Krishna River. A premier Shakti Peetham of South India.',
-    howToGo: 'Located in Vijayawada city. Ropeway and Ghat Road Ghat lift available for direct hilltop ascent. Free Devasthanam shuttle buses from foot of the hill.',
-    timings: 'Dharma Darshanam (Free): 04:00 AM to 09:00 PM. Mukha Mandapam: 05:00 AM to 08:30 PM.',
-    entryFee: 'General Darshan: FREE. Special Entry Darshan: ₹100 / ₹300 tickets available at counter.',
-    highlights: ['Panoramic view of Krishna River & Prakasam Barrage from hilltop', 'Free Prasadam distribution (Laddus & Pulihora)', 'Bhavani Island ferry ride nearby'],
-    proTip: 'Traditional Indian attire mandatory. Free shoe stand and hair tonsuring (Kalyanakatta) available on the hill.'
+
+  tirupati: {
+    name: 'Tirupati',
+    state: 'Andhra Pradesh',
+    tagline: 'Sacred Abode of Lord Sri Venkateswara (Balaji) on Tirumala Hills',
+    idealDays: '2 Days',
+    bestTime: 'September to March (Pleasant hill climate)',
+    itinerary: [
+      {
+        day: 'Day 1: Tirumala Hill Ascent & Holy Darshan',
+        morning: '⛰️ 06:00 AM Scenic drive or Alipiri Mettu foot steps trek (3,550 steps) up to the sacred Seven Hills of Tirumala.',
+        afternoon: '🛕 11:30 AM Sacred Darshan of Lord Venkateswara at the Golden Ananda Nilayam. Receive sacred GI-tagged Tirupati Laddus.',
+        evening: '🌊 05:00 PM Visit Swami Pushkarini holy temple tank, Akasa Ganga waterfall, and Srivari Padalu on top of the hill.'
+      },
+      {
+        day: 'Day 2: Downhill Temples & Chandragiri Fort',
+        morning: '🛕 08:30 AM Darshan of Goddess Sri Padmavathi Ammavari Temple at Tiruchanur.',
+        afternoon: '🏰 01:30 PM Tour historic 11th-century Chandragiri Fort & Raja Mahal Museum.',
+        evening: '🕉️ 05:30 PM Visit Kapila Theertham sacred waterfall temple dedicated to Lord Shiva at the base of the hills.'
+      }
+    ],
+    budget: {
+      soloBackpacker: '₹1,200 – ₹1,800 / day',
+      coupleComfort: '₹2,800 – ₹4,800 / day',
+      familyLuxury: '₹6,500 – ₹12,000 / day',
+      breakdown: {
+        stay: 'TTD Pilgrim Choultries ₹100–₹500 | Tirupati City Hotels ₹1,200–₹3,000 | Luxury Hotels ₹4,500+',
+        food: '₹200 – ₹500/day (Free TTD Annaprasadam, South Indian Thalis)',
+        transport: 'TTD Electric Ghat Buses ₹65 uphill | Local Autos ₹150–₹300',
+        activities: 'Special Entry Darshan ₹300 | TTD Extra Laddus ₹50 each'
+      }
+    },
+    stays: [
+      '⛰️ Uphill on Tirumala: TTD Pilgrim Choultries & Cottages (Book on tirupatibalaji.ap.gov.in)',
+      '🏙️ Downhill in Tirupati: Fortune Select Grand Ridge, Marasa Sarovar Premiere, Bliss Hotel'
+    ],
+    food: [
+      '🥮 Sacred GI-Tagged Tirupati Laddu Prasadam (Prepared with pure desi ghee, cashews & cardamom)',
+      '🍚 Free TTD Nitya Annaprasadam (Tarigonda Vengamamba Complex serving 100,000 pilgrims daily)',
+      '🥞 Andhra Ghee Roast Dosas & Pesarattu Upma at Bhimas Deluxe'
+    ],
+    howToReach: 'Direct flights to Tirupati Airport (TIR) at Renigunta. Direct express trains to Tirupati Main (TPTY) and Renigunta (RU).',
+    proTips: [
+      'MANDATORY TRADITIONAL DRESS CODE: Dhoti/Kurta or White Pyjama for men; Saree or Half-Saree/Churidar with Dupatta for women. Western wear strictly banned for darshan.',
+      'Book ₹300 Special Entry Darshan tickets 3 months in advance on the official TTD portal.',
+      'Free locker facilities are available for luggage and mobile phones at Vaikuntam Queue Complex.'
+    ]
   }
 };
 
-// 3. Main Intelligent AI Processing Engine
-export const generateIntelligentChatReply = async (query, city = 'Varanasi', locationContext = 'Heritage Sight', language = 'en') => {
+// 3. Dynamic Universal Plan & Budget Generator for ANY City / Town in India or Worldwide
+export const generateUniversalTravelPlan = (placeName) => {
+  const cleanPlace = placeName.charAt(0).toUpperCase() + placeName.slice(1);
+  return {
+    name: cleanPlace,
+    state: 'India / Tourism Hub',
+    tagline: `All-Inclusive Travel Itinerary & Budget Blueprint for ${cleanPlace}`,
+    idealDays: '2 to 3 Days',
+    bestTime: 'October to March (Peak tourist season with pleasant weather)',
+    itinerary: [
+      {
+        day: 'Day 1: Arrival & Iconic Landmarks Exploration',
+        morning: `🌅 09:00 AM Check into hotel & visit the primary iconic sight of ${cleanPlace}. Enjoy authentic local breakfast nearby.`,
+        afternoon: `🏛️ 01:30 PM Tour famous heritage museums, gardens, and cultural monuments in ${cleanPlace}. Traditional lunch at top-rated local eatery.`,
+        evening: `🌅 05:30 PM Sunset viewpoint or evening lake/riverfront promenade stroll. Explore vibrant local street market.`
+      },
+      {
+        day: 'Day 2: Nature, Hidden Gems & Shopping',
+        morning: `🌄 08:30 AM Morning excursion to scenic viewpoints, waterfalls, or famous temples around ${cleanPlace}.`,
+        afternoon: `🛍️ 02:00 PM Handicraft shopping for local souvenirs, textiles, and authentic spices in main bazaars.`,
+        evening: `🍽️ 07:00 PM Cultural dinner banquet and leisure walk through the town center.`
+      }
+    ],
+    budget: {
+      soloBackpacker: '₹1,500 – ₹2,400 / day',
+      coupleComfort: '₹3,500 – ₹6,000 / day (total for 2)',
+      familyLuxury: '₹8,500 – ₹18,000 / day',
+      breakdown: {
+        stay: 'Hostels / Budget Stays ₹600–₹1,400 | 3-Star Hotels ₹2,200–₹4,500 | Resorts ₹7,000+',
+        food: '₹400 – ₹900 per person/day (Local Breakfast, Thali, Evening Snacks)',
+        transport: '₹200 – ₹600/day (Local Autos, Taxis & Shared Transport)',
+        activities: '₹100 – ₹400/day (Entry tickets & activity passes)'
+      }
+    },
+    stays: [
+      `🌟 Central Heritage / Town Center: Close to main transport hubs and sightseeing`,
+      `🎒 Backpacker Hostels & Boutique Guesthouses (Starting ₹600/night)`,
+      `🏨 3-Star Comfort Hotels with Free WiFi & AC (₹2,200–₹3,800/night)`
+    ],
+    food: [
+      `🍛 Traditional Regional Thali with local specialties and fresh preparations`,
+      `☕ Iconic local morning breakfast cafes & street food bazaars`,
+      `🍰 Authentic dessert & sweet shops in old town markets`
+    ],
+    howToReach: `Accessible via nearest airport or major railway junction. State express buses and cab rentals provide easy connectivity.`,
+    proTips: [
+      `Book accommodations 1–2 weeks in advance during peak travel seasons.`,
+      `Carry cash for local autos, rickshaws, and street food stalls.`,
+      `Use Tourtec's 'Hotels' and 'Cabs' tabs to book verified rooms and rentals instantly!`
+    ]
+  };
+};
+
+// 4. Main Intelligent AI Processing Engine
+export const generateIntelligentChatReply = async (query, currentCity = 'Varanasi', locationContext = 'Heritage Sight', language = 'en') => {
   const q = (query || '').toLowerCase().trim();
-  const rawCity = (city || 'Varanasi').toLowerCase();
 
-  let cityName = 'Varanasi';
-  if (rawCity.includes('hyderabad')) cityName = 'Hyderabad';
-  else if (rawCity.includes('vijayawada')) cityName = 'Vijayawada';
-  else if (rawCity.includes('tirupati')) cityName = 'Tirupati';
-  else if (rawCity.includes('jaipur')) cityName = 'Jaipur';
-  else if (rawCity.includes('agra')) cityName = 'Agra';
-  else if (rawCity.includes('goa')) cityName = 'Goa';
-  else if (rawCity.includes('delhi')) cityName = 'Delhi';
-  else if (rawCity.includes('amritsar')) cityName = 'Amritsar';
-  else cityName = city.split(',')[0].trim();
+  // A. Check if the user is asking to visit/plan ANY destination ("I want to visit Goa", "Plan a trip to Jaipur", "Visiting Ooty", "Trip to Hyderabad with budget")
+  const visitPlaceRegex = /(?:i want to visit|i want to go to|plan a trip to|travel to|trip to|visit|going to|how to visit|guide for|budget for|explore)\s+([a-zA-Z\s]+)/i;
+  const visitMatch = q.match(visitPlaceRegex);
 
-  // A. Check if user wants to visit a specific landmark ("I want to go to Charminar", "take me to Golconda", "how to go to Taj Mahal")
-  for (const [key, item] of Object.entries(LANDMARK_DB)) {
-    if (q.includes(key) || q.includes(item.name.toLowerCase())) {
-      return {
-        category: `Guide: ${item.name} (${item.city})`,
-        reply: `🗺️ Complete Guide to Visit ${item.name} in ${item.city}:
-
-📍 About: ${item.overview}
-
-🚖 How to Reach:
-➔ ${item.howToGo}
-
-⏰ Timings & Entry:
-➔ Timings: ${item.timings}
-➔ Entry Ticket: ${item.entryFee}
-
-🌟 Must-Do Highlights:
-${item.highlights.map(h => `• ${h}`).join('\n')}
-
-💡 Pro-Tip for Visitors:
-${item.proTip}`
-      };
+  let targetPlace = null;
+  if (visitMatch && visitMatch[1]) {
+    targetPlace = visitMatch[1].replace(/(?:for \d+ days|with budget|on a budget|with family|solo|\?|\.|!)/gi, '').trim().toLowerCase();
+  } else {
+    // Check if query is just a place name or contains a known city
+    for (const key of Object.keys(DESTINATIONS_DB)) {
+      if (q.includes(key)) {
+        targetPlace = key;
+        break;
+      }
     }
   }
 
-  // B. "I want to go to [somewhere]" pattern (Extract destination from user prompt)
-  const wantToGoMatch = q.match(/(?:i want to go to|how to go to|how to reach|take me to|visit|travel to|go to)\s+([a-zA-Z\s]+)/i);
-  if (wantToGoMatch && wantToGoMatch[1]) {
-    const targetPlace = wantToGoMatch[1].replace(/[?.!]/g, '').trim();
-
-    // Check if matching in landmark DB
-    for (const [key, item] of Object.entries(LANDMARK_DB)) {
-      if (targetPlace.toLowerCase().includes(key) || key.includes(targetPlace.toLowerCase())) {
-        return {
-          category: `Guide: ${item.name}`,
-          reply: `🗺️ Guide for Visiting ${item.name}:
-• 📍 Location: ${item.city}
-• 🚖 How to Go: ${item.howToGo}
-• ⏰ Timings: ${item.timings}
-• 🎟️ Entry: ${item.entryFee}
-• 💡 Recommendation: ${item.proTip}`
-        };
+  // If destination matched or user asking for complete trip plan
+  if (targetPlace || q.includes('itinerary') || q.includes('plan') || q.includes('budget') || q.includes('trip') || q.includes('places to visit')) {
+    const searchKey = targetPlace || currentCity.toLowerCase();
+    
+    // Look up in curated DB or generate dynamic universal blueprint
+    let matchedDest = null;
+    for (const [key, dest] of Object.entries(DESTINATIONS_DB)) {
+      if (searchKey.includes(key) || key.includes(searchKey)) {
+        matchedDest = dest;
+        break;
       }
     }
 
-    // Try fetching live Wikipedia knowledge for the searched target place
-    const wikiData = await fetchWikipediaSummary(targetPlace + ' ' + cityName);
-    if (wikiData) {
-      return {
-        category: `Destination Guide: ${wikiData.title}`,
-        reply: `🗺️ Traveling to ${wikiData.title} in ${cityName}:
-
-📍 Overview: ${wikiData.extract}
-
-🚖 How to Go:
-➔ Local Auto-Rickshaw / E-Rickshaw (nominal fares ₹30–₹60).
-➔ App Cabs (Uber / Rapido) provide direct doorstep drop.
-➔ Use Tourtec's 'Trip Plan & Map' tab for 1-click GPS navigation and instant booking.
-
-⏰ Visiting Hours:
-➔ General tourist hours: 09:00 AM – 06:00 PM daily.
-
-💡 Traveler Tip: Keep comfortable walking footwear and sun protection handy!`
-      };
+    if (!matchedDest) {
+      matchedDest = generateUniversalTravelPlan(searchKey);
     }
-  }
 
-  // C. 1-Day & 2-Day Itinerary / Travel Plan
-  if (q.includes('itinerary') || q.includes('plan') || q.includes('1 day') || q.includes('2 day') || q.includes('schedule') || q.includes('what to see') || q.includes('places to visit') || q.includes('sightseeing')) {
-    if (cityName === 'Hyderabad') {
-      return {
-        category: 'Hyderabad 1-Day Perfect Itinerary',
-        reply: `🗺️ Perfect 1-Day Sightseeing Itinerary in Hyderabad:
-
-🌅 Morning (08:30 AM – 11:30 AM):
-• Start at historic Charminar & Mecca Masjid before crowds build up.
-• Enjoy Irani Chai & Osmania Biscuits at Nimrah Cafe.
-• Explore lacquer bangles & pearls at Laad Bazaar.
-
-☀️ Midday (12:30 PM – 03:00 PM):
-• Visit Salar Jung Museum (world's largest one-man collection).
-• Lunch: Savor authentic Hyderabadi Dum Biryani at Shadab / Bawarchi.
-
-🌆 Afternoon to Evening (03:30 PM – 08:00 PM):
-• Explore the acoustic marvels of Golconda Fort.
-• Watch the Sound & Light show at 06:30 PM.
-• Sunset boat ride to the Buddha Statue at Hussain Sagar Lake!`
-      };
-    } else if (cityName === 'Vijayawada') {
-      return {
-        category: 'Vijayawada 1-Day Perfect Itinerary',
-        reply: `🗺️ Perfect 1-Day Sightseeing Itinerary in Vijayawada:
-
-🌅 Morning (06:00 AM – 09:30 AM):
-• Morning Darshan at Sri Kanaka Durga Temple atop Indrakeeladri Hill.
-• Breakfast: Hot Babai Hotel Idlis drenched in ghee & podi.
-
-☀️ Midday (10:30 AM – 02:00 PM):
-• Explore the 7th-century rock-cut Undavalli Caves.
-• Lunch: Authentic spicy Andhra Banana Leaf Meals on MG Road.
-
-🌆 Afternoon & Sunset (03:30 PM – 07:30 PM):
-• Ferry ride to Bhavani Island on the Krishna River.
-• Sunset walk and evening breeze at Prakasam Barrage!`
-      };
-    } else {
-      return {
-        category: 'Varanasi 1-Day Spiritual Itinerary',
-        reply: `🗺️ Perfect 1-Day Spiritual Itinerary in Varanasi:
-
-🌅 Sunrise (05:30 AM – 08:30 AM):
-• Dawn sunrise boat ride on the Ganga from Assi Ghat to Manikarnika.
-• Subah-e-Banaras morning music & yoga at Assi Ghat.
-• Breakfast: Fresh Banarasi Kachori-Jalebi at Godowlia.
-
-☀️ Midday (10:00 AM – 02:00 PM):
-• Darshan at the sacred Kashi Vishwanath Jyotirlinga Temple Corridor.
-• Visit peaceful Sarnath Deer Park & Dhamek Stupa (where Buddha gave his first sermon).
-
-🌆 Evening (05:30 PM – 08:00 PM):
-• Arrive at Dashashwamedh Ghat by 05:45 PM for the world-famous Grand Ganga Aarti.
-• End with chilled Kulhad Malai Lassi and Banarasi Meetha Paan!`
-      };
-    }
-  }
-
-  // D. Hotels / Where to Stay / Accommodations
-  if (q.includes('stay') || q.includes('hotel') || q.includes('room') || q.includes('lodge') || q.includes('resort') || q.includes('dharamshala') || q.includes('hostel') || q.includes('accommodation')) {
-    if (cityName === 'Hyderabad') {
-      return {
-        category: 'Hyderabad Hotel & Stay Recommendations',
-        reply: `🏨 Best Places to Stay in Hyderabad:
-1. 🌟 Royal Luxury: Taj Falaknuma Palace (Heritage Nizam Palace) or ITC Kohenur (Hitech City).
-2. 🏙️ Central & Upscale: Banjara Hills & Jubilee Hills (surrounded by premium cafes, shopping & metro).
-3. 🛺 Budget & Cultural: Abids & Nampally (near Charminar and railway station, starting ₹800–₹1,500/night).
-4. 💼 Tech & Modern: Gachibowli & Madhapur (modern business hotels with direct metro access).`
-      };
-    } else if (cityName === 'Vijayawada') {
-      return {
-        category: 'Vijayawada Hotel & Stay Recommendations',
-        reply: `🏨 Best Places to Stay in Vijayawada:
-1. 🕉️ Temple Pilgrim Cottages: Sri Durga Malleswara Devasthanam Choultries on Indrakeeladri hill (free/nominal ₹200–₹500).
-2. 🌊 Riverfront & Luxury: Novotel Vijayawada Varun & Gateway Hotel on MG Road.
-3. 🏝️ Eco-Resort: APTDC Haritha Resort at Bhavani Island (river island cottages).
-4. 🚉 Budget & Transit: Besant Road & Railway Station area (starting ₹600–₹1,200/night).`
-      };
-    } else {
-      return {
-        category: 'Varanasi Hotel & Stay Recommendations',
-        reply: `🏨 Best Places to Stay in Varanasi:
-1. 🌊 Heritage Riverfront Havelis: BrijRama Palace (Darbhanga Ghat), Palace on Ganges (Assi Ghat).
-2. 🎒 Backpacker & Cultural Hostels: Zostel Varanasi, Moustache near Assi Ghat (starting ₹450–₹1,200/night).
-3. 🕉️ Temple Pilgrim Dharamshalas: Kashi Vishwanath Devasthanam Dharamshala near Gate #4.
-4. 🚉 Luxury & Modern: Cantonment Area (Taj Ganges, Radisson) for quiet transit.`
-      };
-    }
-  }
-
-  // E. Shopping & Bazaars
-  if (q.includes('shopping') || q.includes('buy') || q.includes('market') || q.includes('bazaar') || q.includes('pearl') || q.includes('silk') || q.includes('saree') || q.includes('handicraft')) {
-    if (cityName === 'Hyderabad') {
-      return {
-        category: 'Shopping & Bazaars in Hyderabad',
-        reply: `🛍️ Top Markets in Hyderabad:
-1. 💍 Laad Bazaar: Famous for lacquer bangles, pearl jewelry, and bridal Zardozi work next to Charminar.
-2. 🦪 Pathergatti Pearl Markets: Certified Basra and cultured Hyderabadi pearls with authenticity certificates.
-3. 🎨 Shilparamam (Hitech City): Traditional terracotta, Bidri metal craft, and handloom textiles.`
-      };
-    } else if (cityName === 'Vijayawada') {
-      return {
-        category: 'Shopping in Vijayawada',
-        reply: `🛍️ Top Markets in Vijayawada:
-1. 🪵 Kondapalli Toy Village: Famous GI-tagged handcrafted wooden toys.
-2. 👗 Mangalagiri Saree Market: Pure cotton and Nizam border silk sarees directly from master weavers.
-3. 🛍️ Besant Road: Vibrant street shopping for Andhra sweets, pickles, and spices.`
-      };
-    } else {
-      return {
-        category: 'Shopping in Varanasi',
-        reply: `🛍️ Top Shopping in Varanasi:
-1. 👗 Banarasi Silk Sarees & Brocades: Thatheri Bazaar & Chowk (look for official Handloom Mark).
-2. 🦚 Gulabi Meenakari: Rare pink enamel jewelry on silver unique to Varanasi.
-3. 🪔 Brass Idols & Puja Items: Raja Ghat & Vishwanath Gali for hand-beaten Aarti lamps.`
-      };
-    }
-  }
-
-  // F. Dress Codes & Rules
-  if (q.includes('dress') || q.includes('wear') || q.includes('etiquette') || q.includes('shoe') || q.includes('clothes') || q.includes('rules') || q.includes('camera') || q.includes('mobile')) {
-    if (cityName === 'Hyderabad') {
-      return {
-        category: 'Etiquette in Hyderabad',
-        reply: `🥻 Cultural Etiquette in Hyderabad:
-1. 🕌 Mecca Masjid: Dress modestly covering shoulders and legs; headscarf recommended for women.
-2. 🕉️ Birla Mandir: Footwear, cameras, and mobile phones must be deposited in free lockers at entrance.
-3. 🏰 Charminar & Golconda Fort: Comfortable shoes recommended for stairs; cameras allowed with ticket.`
-      };
-    } else {
-      return {
-        category: `Temple Etiquette in ${cityName}`,
-        reply: `🥻 Sacred Temple Dress Code & Etiquette in ${cityName}:
-1. 👞 Footwear must be removed at the free Joota Ghar before entering.
-2. 🥻 Dress modestly: Traditional attire (Dhoti/Kurta for men, Saree/Churidar for women). Western shorts and sleeveless tops prohibited.
-3. 🔄 Circumambulate (Pradakshina) inside shrines in a clockwise direction.
-4. 📱 Mobile phones should be deposited in cloakrooms or kept on silent.`
-      };
-    }
-  }
-
-  // G. Famous Food & Delicacies
-  if (q.includes('food') || q.includes('eat') || q.includes('restaurant') || q.includes('dish') || q.includes('biryani') || q.includes('lassi') || q.includes('kachori') || q.includes('paan') || q.includes('sweet')) {
-    if (cityName === 'Hyderabad') {
-      return {
-        category: 'Hyderabadi Food Guide',
-        reply: `🍛 Iconic Hyderabadi Delicacies:
-1. 🍗 Hyderabadi Dum Biryani: Paradise (Secunderabad), Bawarchi (RTC X Roads), Shah Ghouse (Charminar).
-2. ☕ Irani Chai with Osmania Biscuits: Nimrah Cafe facing Charminar.
-3. 🍲 Mutton Haleem & Marag: Pista House & Grand Hotel.
-4. 🍮 Double Ka Meetha & Qubani Ka Meetha for dessert!`
-      };
-    } else if (cityName === 'Vijayawada') {
-      return {
-        category: 'Andhra Food Guide',
-        reply: `🌶️ Vijayawada Local Delicacies:
-1. 🍛 Traditional Andhra Thali: Hot rice with cow ghee and spicy Gongura Pachadi on banana leaf.
-2. 🥟 Babai Hotel Idlis: Steaming hot soft Idlis drenched in pure ghee and podi.
-3. 🌶️ Mirchi Bajji & Punugulu by the Krishna River.
-4. 🍬 Pulla Reddy Pootharekulu (Paper Sweets).`
-      };
-    } else {
-      return {
-        category: 'Varanasi Food Guide',
-        reply: `🍲 Authentic Varanasi Street Food:
-1. 🥟 Hot Banarasi Kachori-Jalebi at Godowlia crossing (morning).
-2. 🥛 Thick Malai Lassi in earthen Kulhad cups at Blue Lassi.
-3. 🍅 Tamatar Chaat & Palak Chaat at Kashi Chaat Bhandar.
-4. 🍃 Famous Banarasi Meetha Paan at Keshav Tambool Bhandar.`
-      };
-    }
-  }
-
-  // H. General Fallback with Live Wikipedia Query Integration
-  const wikiFallback = await fetchWikipediaSummary(query + ' ' + cityName);
-  if (wikiFallback) {
+    // Format rich, comprehensive travel plan with Day-by-day Itinerary + Complete Budget + Stays + Food
     return {
-      category: `AI Knowledge: ${wikiFallback.title}`,
-      reply: `💡 ${wikiFallback.title} (${cityName}):
+      category: `Complete Travel Plan & Budget: ${matchedDest.name}`,
+      isTravelPlan: true,
+      destinationName: matchedDest.name,
+      reply: `✨ Complete Travel Blueprint & Budget for ${matchedDest.name} (${matchedDest.idealDays}):
 
-${wikiFallback.extract}
+🌟 Overview: ${matchedDest.tagline}
+⏰ Best Time to Visit: ${matchedDest.bestTime}
 
-🚖 Practical Travel Tip:
-To explore ${wikiFallback.title} smoothly, you can use the 'Trip Plan & Map' tab to generate turn-by-turn routes and book local transit with 1-click!`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗺️ DAY-BY-DAY ITINERARY PLAN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${matchedDest.itinerary.map(item => `
+📍 ${item.day}
+  • Morning: ${item.morning}
+  • Afternoon: ${item.afternoon}
+  • Evening: ${item.evening}
+`).join('')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 ESTIMATED BUDGET BREAKDOWN (INR):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• 🎒 Solo Backpacker: ${matchedDest.budget.soloBackpacker}
+• 👫 Couple Comfort: ${matchedDest.budget.coupleComfort}
+• 👨‍👩‍👧‍👦 Family / Luxury: ${matchedDest.budget.familyLuxury}
+
+📊 Itemized Daily Cost Estimates:
+  🏨 Stay / Hotel: ${matchedDest.budget.breakdown.stay}
+  🍛 Food & Dining: ${matchedDest.budget.breakdown.food}
+  🚖 Local Commute & Cabs: ${matchedDest.budget.breakdown.transport}
+  🎟️ Sightseeing & Entry: ${matchedDest.budget.breakdown.activities}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏨 RECOMMENDED AREAS TO STAY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${matchedDest.stays.map(s => `• ${s}`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🍛 MUST-TRY LOCAL FOOD & ICONIC SPOTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${matchedDest.food.map(f => `• ${f}`).join('\n')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚗 HOW TO REACH & LOCAL COMMUTE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+➔ ${matchedDest.howToReach}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 SMART TRAVELER PRO-TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${matchedDest.proTips.map(p => `• ${p}`).join('\n')}
+`
     };
   }
 
-  // Final Intelligent Contextual Response
+  // B. Temple Dress Codes & Cultural Rules
+  if (q.includes('dress') || q.includes('rule') || q.includes('wear') || q.includes('entry') || q.includes('prohibit') || q.includes('phone') || q.includes('leather')) {
+    return {
+      category: `Temple Rules & Etiquette in ${currentCity}`,
+      reply: `🛕 Sacred Temple Dress Code & Visitor Rules for ${currentCity}:
+1. 👗 Attire Requirements: Traditional Indian wear is mandatory for sanctum entry.
+   • Men: Dhoti with Kurta/Angavastram or white Cotton Pyjama. (Shorts, jeans, and sleeveless shirts are prohibited inside inner sanctum).
+   • Women: Saree, Half-Saree, or Churidar with Dupatta.
+2. 👞 Footwear: Strictly prohibited inside temple complexes. Free & secure shoe-stands are available at main entrance gates.
+3. 📱 Electronics & Leather: Mobile phones, smartwatches, cameras, leather belts, and leather wallets must be deposited in free digital lockers.
+4. 🌸 Temple Sanctity: Maintain silence during Aarti. Photography inside sanctum is strictly prohibited by ASI and Devasthanam boards.`
+    };
+  }
+
+  // C. Street Food & Dining
+  if (q.includes('food') || q.includes('eat') || q.includes('restaurant') || q.includes('dish') || q.includes('breakfast') || q.includes('biryani') || q.includes('kachori') || q.includes('lassi')) {
+    return {
+      category: `Authentic Food & Eateries in ${currentCity}`,
+      reply: `🍛 Must-Try Authentic Food in ${currentCity}:
+1. 🌅 Morning Breakfast: Fresh hot Kachori with spicy aloo sabzi and jalebi from local heritage halwais.
+2. 🥛 Traditional Drinks: Chilled thick Kulhad Malai Lassi topped with fresh rabri, pistachios, and saffron.
+3. 🍲 Main Meals: Pure Desi Ghee Thali featuring regional curries, dal, and tandoori breads.
+4. 🍃 Iconic Sweets: Famous local royal Paan and regional milk sweets (Petha / Laddus / Jalebis).
+💡 Tip: Visit popular street vendors before 11:00 AM for fresh, piping hot breakfast straight from the kadhai!`
+    };
+  }
+
+  // D. General query fallback with live Wikipedia enrichment
+  const wikiData = await fetchWikipediaSummary(q + ' ' + currentCity);
+  if (wikiData) {
+    return {
+      category: `Travel Insights: ${wikiData.title}`,
+      reply: `🗺️ Travel Guide for ${wikiData.title}:
+
+📍 Overview: ${wikiData.extract}
+
+🚖 Recommended Travel Mode:
+➔ Use Tourtec's 'Trip Planner' tab for live GPS navigation and crowd density estimates.
+➔ Book verified cabs or hotel rooms with instant zero-fee passes in the top navigation.
+
+💡 Insider Advice: Visit early in the morning or near sunset for the most pleasant weather and stunning photos!`
+    };
+  }
+
   return {
-    category: `${cityName} Travel Assistant`,
-    reply: `Namaste! Regarding "${query}" in ${cityName}:
+    category: `Incredible India AI Guide: ${currentCity}`,
+    reply: `Namaste! For visiting ${currentCity}, Tourtec recommends exploring iconic heritage sights during morning hours to avoid peak crowds.
 
-I am your real-time AI Travel Guide. Here is what I can assist you with:
-• 🗺️ How to visit any landmark (e.g. "I want to go to Charminar", "How to reach Golconda")
-• 📅 Full 1-Day and 2-Day sightseeing itineraries
-• 🏨 Best places to stay (Hotels, Heritage Havelis & Dharamshalas)
-• 🛍️ Top shopping bazaars, pearls, silk & handicrafts
-• 🥻 Temple dress codes and shoe counter rules
-• 🍛 Famous street foods and authentic restaurants
-• ⏰ Aarti, Darshan, and monument opening timings
-
-Feel free to ask any question about ${cityName}!`
+🗺️ Need a complete trip plan? Type "Plan a trip to ${currentCity}" or "I want to visit Goa/Jaipur/Tirupati" and I will give you a full day-by-day itinerary, itemized budget in INR, best hotels to stay, and iconic food spots!`
   };
 };
