@@ -8,11 +8,12 @@ import { HotelBookingHub } from './components/Hotels/HotelBookingHub';
 import { TransportRentalsHub } from './components/Transport/TransportRentalsHub';
 import { SmartFlowDistribution } from './components/FlowDistribution/SmartFlowDistribution';
 import { ContextLanguageAssistant } from './components/LanguageAssistant/ContextLanguageAssistant';
+import { Satellite360Map } from './components/SatelliteView/Satellite360Map';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
 import { SosModal } from './components/Common/SosModal';
 import { RewardsWalletModal } from './components/Common/RewardsWalletModal';
 import { AuthModal } from './components/Auth/AuthModal';
-import { Heart, Shield, Sparkles, MapPin, Mail, ArrowRight, Globe, Share2, Compass, Lock } from 'lucide-react';
+import { Heart, Shield, Sparkles, MapPin, Mail, ArrowRight, Globe, Share2, Compass, Lock, Satellite } from 'lucide-react';
 
 export const AppContent = () => {
   const { activeTab, setActiveTab, currentDestination, currentUser, setIsAuthModalOpen, setAuthMode } = useApp();
@@ -41,6 +42,7 @@ export const AppContent = () => {
                 {activeTab === 'hotels' && `Exclusive Hotel & Food Stays in ${currentDestination.name.split(',')[0]}`}
                 {activeTab === 'rentals' && `Private Cabs, Tourist Buses & Verified Agencies in ${currentDestination.name.split(',')[0]}`}
                 {activeTab === 'digitalTwin' && `Live Crowd Density & Queue Clearance in ${currentDestination.name.split(',')[0]}`}
+                {activeTab === 'satellite' && `Google Maps 360° Satellite Radar in ${currentDestination.name.split(',')[0]}`}
                 {activeTab === 'flow' && 'Avoid Queues with 1-Click VIP FastPasses'}
                 {activeTab === 'assistant' && 'Multilingual AI Travel Guide & Camera Translator'}
               </h2>
@@ -110,6 +112,7 @@ export const AppContent = () => {
               {activeTab === 'hotels' && <HotelBookingHub />}
               {activeTab === 'rentals' && <TransportRentalsHub />}
               {activeTab === 'digitalTwin' && <TravelDigitalTwin />}
+              {activeTab === 'satellite' && <Satellite360Map />}
               {activeTab === 'flow' && <SmartFlowDistribution />}
               {activeTab === 'assistant' && <ContextLanguageAssistant />}
             </div>
