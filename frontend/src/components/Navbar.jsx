@@ -16,8 +16,7 @@ import {
   Check,
   User,
   LogOut,
-  ShieldCheck,
-  Hourglass
+  ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -63,8 +62,7 @@ export const Navbar = () => {
     { id: 'rentals', label: t('navRentals'), icon: Car },
     { id: 'digitalTwin', label: t('navLiveCrowds'), icon: Users },
     { id: 'flow', label: t('navFastPass'), icon: Sparkles },
-    { id: 'assistant', label: t('navVoiceGuide'), icon: MessageSquare },
-    { id: 'timemachine', label: 'Time Machine ⏳', icon: Hourglass }
+    { id: 'assistant', label: t('navVoiceGuide'), icon: MessageSquare }
   ];
 
   const handleTabClick = (tabId) => {

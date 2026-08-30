@@ -8,7 +8,6 @@ import { HotelBookingHub } from './components/Hotels/HotelBookingHub';
 import { TransportRentalsHub } from './components/Transport/TransportRentalsHub';
 import { SmartFlowDistribution } from './components/FlowDistribution/SmartFlowDistribution';
 import { ContextLanguageAssistant } from './components/LanguageAssistant/ContextLanguageAssistant';
-import { HeritageTimeMachine } from './components/TimeMachine/HeritageTimeMachine';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
 import { SosModal } from './components/Common/SosModal';
 import { RewardsWalletModal } from './components/Common/RewardsWalletModal';
@@ -44,7 +43,6 @@ export const AppContent = () => {
                 {activeTab === 'digitalTwin' && `Live Crowd Density & Queue Clearance in ${currentDestination.name.split(',')[0]}`}
                 {activeTab === 'flow' && 'Avoid Queues with 1-Click VIP FastPasses'}
                 {activeTab === 'assistant' && 'Multilingual AI Travel Guide & Camera Translator'}
-                {activeTab === 'timemachine' && `AI Heritage Time Machine: Travel 500 Years in ${currentDestination.name.split(',')[0]}`}
               </h2>
             </div>
 
@@ -71,7 +69,7 @@ export const AppContent = () => {
                   Sign In to Unlock Full TOURTEC Platform
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
-                  Join verified travelers. Sign in or create a free account to access Live GPS Roadmaps, 500-Year AI Heritage Time Machine, VIP FastPasses, Cabs & Hotel Stays (+100 Travel Points Bonus).
+                  Join verified travelers. Sign in or create a free account to access Live GPS Roadmaps, AI Voice Guide, VIP FastPasses, Cabs & Hotel Stays (+100 Travel Points Bonus).
                 </p>
               </div>
 
@@ -101,7 +99,7 @@ export const AppContent = () => {
               {/* Protected Feature Highlights */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-slate-100 text-xs text-slate-600 font-bold">
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">🗺️ Live GPS Roadmap</div>
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">⏳ 500-Year Time Machine</div>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">⚡ 1-Click FastPasses</div>
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">🤖 AI Voice & Camera OCR</div>
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">🏨 Verified Stays & Cabs</div>
               </div>
@@ -114,7 +112,6 @@ export const AppContent = () => {
               {activeTab === 'digitalTwin' && <TravelDigitalTwin />}
               {activeTab === 'flow' && <SmartFlowDistribution />}
               {activeTab === 'assistant' && <ContextLanguageAssistant />}
-              {activeTab === 'timemachine' && <HeritageTimeMachine />}
             </div>
           )}
         </div>

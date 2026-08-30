@@ -6,12 +6,11 @@ import {
   Car,
   Users,
   Sparkles,
-  MessageSquare,
-  Hourglass
+  MessageSquare
 } from 'lucide-react';
 
 export const MobileBottomNav = () => {
-  const { activeTab, setActiveTab, t } = useApp();
+  const { activeTab, setActiveTab, currentUser, setIsAuthModalOpen, t } = useApp();
 
   const navItems = [
     { id: 'roadmap', label: 'Planner', icon: Compass },
@@ -19,8 +18,7 @@ export const MobileBottomNav = () => {
     { id: 'rentals', label: 'Cabs', icon: Car },
     { id: 'digitalTwin', label: 'Crowds', icon: Users },
     { id: 'flow', label: 'FastPass', icon: Sparkles },
-    { id: 'assistant', label: 'AI Guide', icon: MessageSquare },
-    { id: 'timemachine', label: 'Time Travel', icon: Hourglass }
+    { id: 'assistant', label: 'AI Guide', icon: MessageSquare }
   ];
 
   const handleMobileNavClick = (tabId) => {
