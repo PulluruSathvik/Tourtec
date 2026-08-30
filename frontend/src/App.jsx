@@ -13,10 +13,10 @@ import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
 import { SosModal } from './components/Common/SosModal';
 import { RewardsWalletModal } from './components/Common/RewardsWalletModal';
 import { AuthModal } from './components/Auth/AuthModal';
-import { Heart, Shield, Sparkles, MapPin, Mail, ArrowRight, Globe, Share2, Compass } from 'lucide-react';
+import { Heart, Shield, Sparkles, MapPin, Mail, ArrowRight, Globe, Share2, Compass, Lock } from 'lucide-react';
 
 export const AppContent = () => {
-  const { activeTab, setActiveTab, currentDestination } = useApp();
+  const { activeTab, setActiveTab, currentDestination, currentUser, setIsAuthModalOpen, setAuthMode } = useApp();
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-800 font-holiday antialiased selection:bg-blue-200 selection:text-blue-950 pb-16 lg:pb-0">
@@ -55,16 +55,68 @@ export const AppContent = () => {
             </div>
           </div>
 
-          {/* Active Module View */}
-          <div className="w-full">
-            {activeTab === 'roadmap' && <DynamicRoadmap />}
-            {activeTab === 'hotels' && <HotelBookingHub />}
-            {activeTab === 'rentals' && <TransportRentalsHub />}
-            {activeTab === 'digitalTwin' && <TravelDigitalTwin />}
-            {activeTab === 'flow' && <SmartFlowDistribution />}
-            {activeTab === 'assistant' && <ContextLanguageAssistant />}
-            {activeTab === 'timemachine' && <HeritageTimeMachine />}
-          </div>
+          {/* Active Module View Protected by Mandatory Authentication Guard */}
+          {!currentUser ? (
+            <div className="w-full bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 text-center shadow-xl relative overflow-hidden space-y-6 animate-scaleUp">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                <Lock className="w-8 h-8 text-blue-600" />
+              </div>
+
+              <div className="max-w-xl mx-auto space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-black">
+                  <Sparkles className="w-3.5 h-3.5 text-orange-600" />
+                  <span>Tourist Authentication Required</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Sign In to Unlock Full TOURTEC Platform
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
+                  Join verified travelers. Sign in or create a free account to access Live GPS Roadmaps, 500-Year AI Heritage Time Machine, VIP FastPasses, Cabs & Hotel Stays (+100 Travel Points Bonus).
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setAuthMode('signin');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Sign In to Continue</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    setAuthMode('signup');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="w-full sm:w-auto px-8 py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-2xl font-black text-sm transition cursor-pointer"
+                >
+                  <span>Create Account (Free +100 PTS)</span>
+                </button>
+              </div>
+
+              {/* Protected Feature Highlights */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto pt-6 border-t border-slate-100 text-xs text-slate-600 font-bold">
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">🗺️ Live GPS Roadmap</div>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">⏳ 500-Year Time Machine</div>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">🤖 AI Voice & Camera OCR</div>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60">🏨 Verified Stays & Cabs</div>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full">
+              {activeTab === 'roadmap' && <DynamicRoadmap />}
+              {activeTab === 'hotels' && <HotelBookingHub />}
+              {activeTab === 'rentals' && <TransportRentalsHub />}
+              {activeTab === 'digitalTwin' && <TravelDigitalTwin />}
+              {activeTab === 'flow' && <SmartFlowDistribution />}
+              {activeTab === 'assistant' && <ContextLanguageAssistant />}
+              {activeTab === 'timemachine' && <HeritageTimeMachine />}
+            </div>
+          )}
         </div>
 
       </main>

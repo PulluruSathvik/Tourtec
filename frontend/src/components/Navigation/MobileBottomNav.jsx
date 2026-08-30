@@ -24,6 +24,10 @@ export const MobileBottomNav = () => {
   ];
 
   const handleMobileNavClick = (tabId) => {
+    if (!currentUser) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     setActiveTab(tabId);
     const moduleSection = document.getElementById('feature-module-section');
     if (moduleSection) {
