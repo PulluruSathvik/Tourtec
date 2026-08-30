@@ -1,4 +1,5 @@
 import { calculateDistanceKm } from './routeCalculatorService';
+import { findAPDestinationBundle } from './apTourismService';
 
 // 1. Live Real-Time Weather Fetcher via Open-Meteo Free API (Zero API Keys Needed)
 export const fetchLiveRealTimeWeather = async (lat, lng) => {
@@ -686,7 +687,17 @@ export const discoverNearbyAttractions = async (query) => {
     }
   }
 
-  // 2. Real-Time Geocoding via OpenStreetMap Nominatim for ANY destination worldwide
+  // 2. Check 50,000-Record Official Andhra Pradesh Tourism Dataset
+  const apBundle = findAPDestinationBundle(query);
+  if (apBundle) {
+    const weather = await fetchLiveRealTimeWeather(apBundle.center[0], apBundle.center[1]);
+    return {
+      ...apBundle,
+      weather
+    };
+  }
+
+  // 3. Real-Time Geocoding via OpenStreetMap Nominatim for ANY destination worldwide
   const geoResult = await geocodePlaceName(query);
   const baseLat = geoResult?.lat || 25.3176;
   const baseLng = geoResult?.lng || 83.0062;

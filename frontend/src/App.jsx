@@ -8,6 +8,7 @@ import { HotelBookingHub } from './components/Hotels/HotelBookingHub';
 import { TransportRentalsHub } from './components/Transport/TransportRentalsHub';
 import { SmartFlowDistribution } from './components/FlowDistribution/SmartFlowDistribution';
 import { ContextLanguageAssistant } from './components/LanguageAssistant/ContextLanguageAssistant';
+import { APTourismExplorer } from './components/APTourism/APTourismExplorer';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
 import { SosModal } from './components/Common/SosModal';
 import { RewardsWalletModal } from './components/Common/RewardsWalletModal';
@@ -105,13 +106,16 @@ export const AppContent = () => {
               </div>
             </div>
           ) : (
-            <div className="w-full">
+            <div className="w-full space-y-10">
               {activeTab === 'roadmap' && <DynamicRoadmap />}
               {activeTab === 'hotels' && <HotelBookingHub />}
               {activeTab === 'rentals' && <TransportRentalsHub />}
               {activeTab === 'digitalTwin' && <TravelDigitalTwin />}
               {activeTab === 'flow' && <SmartFlowDistribution />}
               {activeTab === 'assistant' && <ContextLanguageAssistant />}
+
+              {/* 🏛️ 50,000 AP Tourism Dataset Explorer Section */}
+              <APTourismExplorer />
             </div>
           )}
         </div>
