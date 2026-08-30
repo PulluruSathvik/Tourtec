@@ -27,7 +27,7 @@ import {
 import confetti from 'canvas-confetti';
 
 export const TransportRentalsHub = () => {
-  const { currentDestination, ecoPoints, setEcoPoints } = useApp();
+  const { currentDestination, ecoPoints, setEcoPoints, currentUser } = useApp();
 
   const cityName = currentDestination.name.split(',')[0].trim();
   const [activeSection, setActiveSection] = useState('cabs'); // 'cabs' | 'buses' | 'agencies' | 'budget_estimator'
@@ -341,11 +341,15 @@ export const TransportRentalsHub = () => {
                       onClick={() => {
                         setSelectedCabForBooking(cab);
                         setConfirmedRentalPass(null);
+                        if (currentUser) {
+                          setPassengerName(currentUser.fullName || currentUser.name || '');
+                          setPassengerPhone(currentUser.phoneNumber || '+91 98765 43210');
+                        }
                       }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
                     >
-                      <QrCode className="w-3.5 h-3.5" />
-                      <span>Reserve Cab Pass</span>
+                      <Car className="w-3.5 h-3.5" />
+                      <span>Book Private Cab</span>
                     </button>
                   </div>
                 </div>
