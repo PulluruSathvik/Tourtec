@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Layers, Key, Check, Settings2, Globe2, Eye, Shield, Map as MapIcon, Crosshair, Home, Sparkles, Navigation } from 'lucide-react';
+import {
+  Layers,
+  Check,
+  Globe2,
+  Map as MapIcon,
+  Home,
+  Sparkles,
+  Navigation,
+  Compass,
+  Maximize2,
+  Minimize2,
+  Eye,
+  ExternalLink,
+  X
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 // Custom Leaflet Icons with Light Indian Heritage Theme
@@ -44,9 +58,9 @@ const parseSafeCoords = (input, defaultCoords = [25.3176, 83.0062]) => {
 const ChangeMapView = ({ center, zoom, roadmapPoints, userGpsCoords }) => {
   const map = useMap();
   useEffect(() => {
-    // If user clicked Locate My Home / GPS, zoom super close onto user's location
+    // If user clicked Locate My Home / GPS, zoom super close onto user's location (Zoom 19)
     if (userGpsCoords && userGpsCoords.lat && userGpsCoords.lng) {
-      map.flyTo([userGpsCoords.lat, userGpsCoords.lng], 18, { animate: true, duration: 1.5 });
+      map.flyTo([userGpsCoords.lat, userGpsCoords.lng], 19, { animate: true, duration: 1.5 });
       return;
     }
 
@@ -58,7 +72,7 @@ const ChangeMapView = ({ center, zoom, roadmapPoints, userGpsCoords }) => {
       if (validPoints.length > 1) {
         try {
           const bounds = L.latLngBounds(validPoints.map(p => [Number(p.lat), Number(p.lng)]));
-          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15, animate: true, duration: 1.2 });
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16, animate: true, duration: 1.2 });
           return;
         } catch (e) {
           console.warn('Bounds fit fallback:', e);
@@ -66,8 +80,7 @@ const ChangeMapView = ({ center, zoom, roadmapPoints, userGpsCoords }) => {
       }
     }
     
-    // Otherwise fly directly to the safe center coordinates
-    map.flyTo(safe, zoom || 14, { animate: true, duration: 1.2 });
+    map.flyTo(safe, zoom || 15, { animate: true, duration: 1.2 });
   }, [center, zoom, roadmapPoints, userGpsCoords, map]);
 
   return null;
@@ -85,55 +98,46 @@ export const LiveMap = ({
 }) => {
   const safeCenter = parseSafeCoords(center, [25.3176, 83.0062]);
 
-  // Map Provider & Layer State (Default to Google Hybrid Satellite or Clean Streets)
-  const [activeLayer, setActiveLayer] = useState('google_hybrid'); // 'google_hybrid' | 'esri_streets' | 'esri_satellite' | 'osm' | 'opentopo'
-  const [showKeyModal, setShowKeyModal] = useState(false);
+  // Map Provider & Layer State (Default to Google Hybrid Satellite showing Houses & Roads)
+  const [activeLayer, setActiveLayer] = useState('google_hybrid');
   const [showLayerMenu, setShowLayerMenu] = useState(false);
+  const [show360Modal, setShow360Modal] = useState(false);
   
   const [userGpsCoords, setUserGpsCoords] = useState(null);
   const [isLocatingUser, setIsLocatingUser] = useState(false);
   const [locationStatus, setLocationStatus] = useState(null);
 
-  const [customMapboxKey, setCustomMapboxKey] = useState(import.meta.env.VITE_MAPBOX_TOKEN || '');
-  const [customMapTilerKey, setCustomMapTilerKey] = useState(import.meta.env.VITE_MAPTILER_KEY || '');
-  const [savedNotice, setSavedNotice] = useState(false);
-
-  // Clean, High-Definition Tile Providers with High-Res Satellite View (up to Zoom 20)
+  // High-Definition Tile Providers (Google Satellite showing exact houses, rooftops, roads, lanes)
   const tileProviders = {
     google_hybrid: {
-      name: '🛰️ Google Hybrid Satellite (See Rooftops & Homes)',
+      name: '🛰️ Google Hybrid (Houses, Roads & Rooftops)',
       url: 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-      attribution: '&copy; Google Maps Satellite Imagery',
-      maxZoom: 20,
-      requiresKey: false
+      attribution: '&copy; Google Maps Satellite Imagery & Roads',
+      maxZoom: 21
     },
-    esri_satellite: {
-      name: '🛰️ ESRI 3D Satellite (Aerial View)',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics',
-      maxZoom: 19,
-      requiresKey: false
+    google_satellite: {
+      name: '🛰️ Google Pure Satellite (Ultra-HD)',
+      url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google Maps Satellite Imagery',
+      maxZoom: 21
+    },
+    google_streets: {
+      name: '🗺️ Google Street Map (Roads & House Numbers)',
+      url: 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+      attribution: '&copy; Google Maps Street Data',
+      maxZoom: 20
     },
     esri_streets: {
       name: '🗺️ ESRI Clean Street Map (HD Light)',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-      attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin',
-      maxZoom: 19,
-      requiresKey: false
+      attribution: '&copy; Esri, HERE, Garmin',
+      maxZoom: 19
     },
     osm: {
       name: '🗺️ OpenStreetMap (Standard Grid)',
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19,
-      requiresKey: false
-    },
-    opentopo: {
-      name: '🏔️ OpenTopoMap (Topographic Terrain)',
-      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-      attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
-      maxZoom: 17,
-      requiresKey: false
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
     }
   };
 
@@ -143,7 +147,7 @@ export const LiveMap = ({
     .filter(p => p.lat && p.lng)
     .map(p => [Number(p.lat), Number(p.lng)]);
 
-  // 1-Click "Locate My Home / Current GPS Position"
+  // 1-Click "Locate My Home / Current GPS Position in Satellite View"
   const handleLocateMyHome = () => {
     setIsLocatingUser(true);
     setLocationStatus('Locating your GPS coordinates...');
@@ -160,14 +164,13 @@ export const LiveMap = ({
         setUserGpsCoords({ lat: latitude, lng: longitude, title: 'My Home / Current Location' });
         setActiveLayer('google_hybrid'); // Automatically switch to Satellite View so user sees their rooftop/home!
         setIsLocatingUser(false);
-        setLocationStatus('📍 Zoomed in to your location in Satellite 3D View!');
+        setLocationStatus('📍 Zoomed in to your home & roads in Satellite 3D View!');
 
         confetti({ particleCount: 50, spread: 70 });
         setTimeout(() => setLocationStatus(null), 4000);
       },
       (error) => {
         console.warn('Geolocation error:', error);
-        // Fallback demo coordinates if permission denied
         setUserGpsCoords({ lat: safeCenter[0], lng: safeCenter[1], title: 'Current Region' });
         setActiveLayer('google_hybrid');
         setIsLocatingUser(false);
@@ -178,14 +181,9 @@ export const LiveMap = ({
     );
   };
 
-  const handleSaveKeys = (e) => {
-    e.preventDefault();
-    setSavedNotice(true);
-    setTimeout(() => {
-      setSavedNotice(false);
-      setShowKeyModal(false);
-    }, 1200);
-  };
+  // Coordinates for 360 Google View
+  const targetLat = userGpsCoords?.lat || safeCenter[0];
+  const targetLng = userGpsCoords?.lng || safeCenter[1];
 
   return (
     <div className="relative w-full rounded-3xl overflow-hidden border border-slate-200 shadow-md bg-slate-950" style={{ height }}>
@@ -194,58 +192,68 @@ export const LiveMap = ({
       <div className="absolute top-3 left-3 right-3 z-[1000] flex items-center justify-between pointer-events-none">
         
         {/* Left: Quick Satellite ➔ Street View Toggle & Locate Home */}
-        <div className="flex items-center gap-2 pointer-events-auto bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-lg text-xs">
+        <div className="flex items-center gap-1.5 pointer-events-auto bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-lg text-xs">
           
+          {/* Satellite Mode Button */}
           <button
             onClick={() => setActiveLayer('google_hybrid')}
-            className={`px-3 py-1.5 rounded-xl font-black transition flex items-center gap-1.5 ${
-              activeLayer === 'google_hybrid' || activeLayer === 'esri_satellite'
+            className={`px-3 py-1.5 rounded-xl font-black transition flex items-center gap-1.5 cursor-pointer ${
+              activeLayer === 'google_hybrid' || activeLayer === 'google_satellite'
                 ? 'bg-amber-500 text-slate-950 shadow-md'
                 : 'text-white hover:text-amber-400'
             }`}
+            title="Show satellite imagery with roads & houses"
           >
             <Globe2 className="w-3.5 h-3.5" />
-            <span>🛰️ Satellite 3D View</span>
+            <span>🛰️ Satellite (Roads & Houses)</span>
           </button>
 
+          {/* Street Map Button */}
           <button
-            onClick={() => setActiveLayer('esri_streets')}
-            className={`px-3 py-1.5 rounded-xl font-black transition flex items-center gap-1.5 ${
-              activeLayer === 'esri_streets' || activeLayer === 'osm'
+            onClick={() => setActiveLayer('google_streets')}
+            className={`px-3 py-1.5 rounded-xl font-black transition flex items-center gap-1.5 cursor-pointer ${
+              activeLayer === 'google_streets' || activeLayer === 'esri_streets' || activeLayer === 'osm'
                 ? 'bg-amber-500 text-slate-950 shadow-md'
                 : 'text-white hover:text-amber-400'
             }`}
+            title="Show regular street map"
           >
             <MapIcon className="w-3.5 h-3.5" />
-            <span>🗺️ Street Map</span>
+            <span>🗺️ Streets</span>
           </button>
 
           <div className="w-[1px] h-4 bg-white/20 my-auto"></div>
+
+          {/* 360° Google Viewport Button */}
+          <button
+            onClick={() => setShow360Modal(true)}
+            className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
+            title="Open 360 Google Maps Street & Satellite View"
+          >
+            <Compass className="w-3.5 h-3.5 text-amber-300" />
+            <span className="hidden sm:inline">360° View</span>
+          </button>
 
           {/* Locate My Home GPS Button */}
           <button
             onClick={handleLocateMyHome}
             disabled={isLocatingUser}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95"
+            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl transition flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
             title="Zoom into your home in Satellite View"
           >
             <Home className="w-3.5 h-3.5 text-amber-300" />
-            <span>{isLocatingUser ? 'Finding...' : '🏠 Locate My Home'}</span>
+            <span className="hidden sm:inline">{isLocatingUser ? 'Finding...' : 'Locate Home'}</span>
           </button>
         </div>
 
-        {/* Right: Layer Dropdown & API Keys */}
+        {/* Right: Layer Dropdown */}
         <div className="flex items-center gap-2 pointer-events-auto">
           
-          {/* Layer Selector Button */}
           <div className="relative">
             <button
-              onClick={() => {
-                setShowLayerMenu(!showLayerMenu);
-                setShowKeyModal(false);
-              }}
-              className="flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 text-xs font-bold text-white shadow-lg hover:bg-slate-800 transition"
-              title="More Geospatial Layers"
+              onClick={() => setShowLayerMenu(!showLayerMenu)}
+              className="flex items-center gap-1.5 bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 text-xs font-bold text-white shadow-lg hover:bg-slate-800 transition cursor-pointer"
+              title="Change Map Layers"
             >
               <Layers className="w-4 h-4 text-amber-400" />
               <span className="hidden sm:inline">Layers</span>
@@ -253,9 +261,9 @@ export const LiveMap = ({
 
             {/* Layer Menu Dropdown */}
             {showLayerMenu && (
-              <div className="absolute right-0 mt-2 w-72 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-1 text-xs animate-fadeIn text-white">
+              <div className="absolute right-0 mt-2 w-72 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-2xl shadow-2xl p-2 space-y-1 text-xs animate-fadeIn text-white z-[1010]">
                 <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Select High-Res Map View:
+                  Select Map & Satellite View:
                 </div>
                 {Object.entries(tileProviders).map(([key, provider]) => (
                   <button
@@ -264,7 +272,7 @@ export const LiveMap = ({
                       setActiveLayer(key);
                       setShowLayerMenu(false);
                     }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between font-semibold transition ${
+                    className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between font-semibold transition cursor-pointer ${
                       activeLayer === key
                         ? 'bg-amber-500 text-slate-950 font-bold'
                         : 'text-slate-200 hover:bg-slate-800'
@@ -290,11 +298,11 @@ export const LiveMap = ({
         </div>
       )}
 
-      {/* Map Container (High-Res zoom up to 20 for house-level details) */}
+      {/* Map Container (High-Res zoom up to 21 for house and road details) */}
       <MapContainer
         center={safeCenter}
         zoom={zoom}
-        maxZoom={20}
+        maxZoom={21}
         scrollWheelZoom={true}
         className="w-full h-full"
       >
@@ -305,13 +313,13 @@ export const LiveMap = ({
           userGpsCoords={userGpsCoords}
         />
         
-        {/* Dynamic Tile Layer (Google Satellite Hybrid / ESRI Satellite / Streets) */}
+        {/* Dynamic Tile Layer (Google Hybrid Satellite / Streets) */}
         <TileLayer
           key={activeLayer}
           attribution={currentTileConfig.attribution}
           url={currentTileConfig.url}
-          maxZoom={currentTileConfig.maxZoom || 20}
-          maxNativeZoom={currentTileConfig.maxZoom || 20}
+          maxZoom={currentTileConfig.maxZoom || 21}
+          maxNativeZoom={currentTileConfig.maxZoom || 21}
         />
 
         {/* Dynamic Zone Heat & Geofence Circles */}
@@ -348,19 +356,13 @@ export const LiveMap = ({
               icon={createCustomIcon('saffron', `${pIdx + 1}`)}
             >
               <Popup>
-                <div className="p-1 min-w-[210px] text-slate-900">
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                      SIGHT {pIdx + 1}
-                    </span>
-                    <span className="text-xs font-bold font-mono text-slate-500">{point.time || ''}</span>
-                  </div>
-                  <h4 className="font-extrabold text-slate-900 text-sm">{point.title || point.name}</h4>
-                  <p className="text-xs text-slate-600 font-medium my-1 leading-relaxed">
-                    {point.tips || point.description || point.category}
-                  </p>
-                  <div className="text-[11px] font-bold text-amber-800 bg-amber-50 p-1.5 rounded-lg border border-amber-200 mt-1">
-                    {point.recommendedTransport ? `🚖 ${point.recommendedTransport} (${point.recommendedFare || 'Free'})` : '📍 Heritage Attraction'}
+                <div className="p-1 min-w-[200px] text-slate-900">
+                  <div className="text-xs font-black text-blue-700 uppercase">Stop #{pIdx + 1}</div>
+                  <div className="font-bold text-sm text-slate-900 mt-0.5">{point.title}</div>
+                  <div className="text-xs text-slate-600 mt-1">{point.directionsGuide || point.tips}</div>
+                  <div className="mt-2 pt-1 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-amber-700">
+                    <span>{point.recommendedTransport || 'Auto / Cab'}</span>
+                    <span>{point.recommendedFare || '₹30'}</span>
                   </div>
                 </div>
               </Popup>
@@ -368,71 +370,79 @@ export const LiveMap = ({
           );
         })}
 
-        {/* Roadmap Heritage Polyline */}
-        {polylineCoords.length > 1 && (
-          <Polyline
-            positions={polylineCoords}
-            pathOptions={{
-              color: '#F59E0B',
-              weight: 4,
-              opacity: 0.95,
-              dashArray: '6, 6'
-            }}
-          />
-        )}
-
-        {/* User GPS / Home Marker */}
+        {/* User GPS Home Marker */}
         {userGpsCoords && (
           <Marker
             position={[userGpsCoords.lat, userGpsCoords.lng]}
             icon={createCustomIcon('emerald', '🏠', true)}
           >
             <Popup>
-              <div className="p-1 min-w-[180px] text-slate-900">
-                <span className="text-xs font-black text-emerald-700 uppercase">🏠 Your Home / GPS Location</span>
-                <p className="text-xs font-bold text-slate-800 mt-1">Latitude: {userGpsCoords.lat.toFixed(5)}</p>
-                <p className="text-xs font-bold text-slate-800">Longitude: {userGpsCoords.lng.toFixed(5)}</p>
-                <p className="text-[10px] text-slate-500 mt-1">High-Res Satellite View Active</p>
+              <div className="p-1 font-bold text-xs text-slate-900">
+                🏠 <strong>Your Location / Home</strong>
+                <p className="text-[11px] text-slate-600 font-normal mt-1">
+                  Viewing in Google Satellite 3D Mode (Rooftops & Roads)
+                </p>
               </div>
             </Popup>
           </Marker>
         )}
 
-        {/* User Standing Position Marker */}
-        {userLocation && userLocation.lat && !userGpsCoords && (
-          <Marker
-            position={[userLocation.lat, userLocation.lng]}
-            icon={createCustomIcon('saffron', '👤', true)}
-          >
-            <Popup>
-              <div className="p-1 text-slate-900">
-                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Your Live Spot</span>
-                <p className="text-sm font-bold text-slate-900 mt-0.5">{userLocation.landmark || 'Current Checkpoint'}</p>
-              </div>
-            </Popup>
-          </Marker>
+        {/* Connecting GPS Route Line */}
+        {polylineCoords.length > 1 && (
+          <Polyline
+            positions={polylineCoords}
+            pathOptions={{
+              color: '#3B82F6',
+              weight: 4,
+              opacity: 0.85,
+              dashArray: '8, 8'
+            }}
+          />
         )}
       </MapContainer>
 
-      {/* Map Legend Overlay */}
-      <div className="absolute bottom-3 left-3 z-[1000] bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-[11px] flex items-center gap-4 text-slate-200 shadow-md font-semibold">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span>Tranquil Spot</span>
+      {/* 360° GOOGLE MAPS IN-MAP MODAL VIEWPORT */}
+      {show360Modal && (
+        <div className="absolute inset-0 z-[2000] bg-slate-950/95 backdrop-blur-md p-4 flex flex-col animate-fadeIn text-white">
+          <div className="flex items-center justify-between pb-3 border-b border-white/20">
+            <div className="flex items-center gap-2">
+              <Compass className="w-5 h-5 text-amber-400 animate-spin" style={{ animationDuration: '8s' }} />
+              <div>
+                <h4 className="text-sm font-black text-white">360° Google Maps Satellite & Street View</h4>
+                <p className="text-[10px] text-slate-400">Viewing real roads, buildings, houses and monuments at {targetLat.toFixed(4)}°N, {targetLng.toFixed(4)}°E</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://earth.google.com/web/search/${targetLat},${targetLng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1"
+              >
+                <span>Google Earth 3D</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <button
+                onClick={() => setShow360Modal(false)}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 w-full rounded-2xl overflow-hidden mt-3 border border-white/20">
+            <iframe
+              src={`https://maps.google.com/maps?q=${targetLat},${targetLng}&t=k&z=18&ie=UTF8&iwloc=&output=embed`}
+              title="360 Google Satellite View"
+              className="w-full h-full border-0"
+              loading="lazy"
+              allowFullScreen
+            ></iframe>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-          <span>Moderate Load</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-          <span>Crowded</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-          <span>🏠 Home / You</span>
-        </div>
-      </div>
+      )}
 
     </div>
   );

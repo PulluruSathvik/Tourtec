@@ -6,8 +6,7 @@ import {
   Car,
   Users,
   Sparkles,
-  MessageSquare,
-  Satellite
+  MessageSquare
 } from 'lucide-react';
 
 export const MobileBottomNav = () => {
@@ -17,7 +16,6 @@ export const MobileBottomNav = () => {
     { id: 'roadmap', label: 'Planner', icon: Compass },
     { id: 'hotels', label: 'Stays', icon: Building2 },
     { id: 'rentals', label: 'Cabs', icon: Car },
-    { id: 'satellite', label: '360° Sat', icon: Satellite },
     { id: 'digitalTwin', label: 'Crowds', icon: Users },
     { id: 'flow', label: 'FastPass', icon: Sparkles },
     { id: 'assistant', label: 'AI Guide', icon: MessageSquare }

@@ -16,8 +16,7 @@ import {
   Check,
   User,
   LogOut,
-  ShieldCheck,
-  Satellite
+  ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -62,7 +61,6 @@ export const Navbar = () => {
     { id: 'hotels', label: t('navHotels'), icon: Building2 },
     { id: 'rentals', label: t('navRentals'), icon: Car },
     { id: 'digitalTwin', label: t('navLiveCrowds'), icon: Users },
-    { id: 'satellite', label: '360° Satellite 🛰️', icon: Satellite },
     { id: 'flow', label: t('navFastPass'), icon: Sparkles },
     { id: 'assistant', label: t('navVoiceGuide'), icon: MessageSquare }
   ];
