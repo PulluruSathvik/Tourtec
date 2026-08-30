@@ -8,11 +8,12 @@ import { HotelBookingHub } from './components/Hotels/HotelBookingHub';
 import { TransportRentalsHub } from './components/Transport/TransportRentalsHub';
 import { SmartFlowDistribution } from './components/FlowDistribution/SmartFlowDistribution';
 import { ContextLanguageAssistant } from './components/LanguageAssistant/ContextLanguageAssistant';
+import { LostTouristDetector } from './components/ConfusionDetection/LostTouristDetector';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
 import { SosModal } from './components/Common/SosModal';
 import { RewardsWalletModal } from './components/Common/RewardsWalletModal';
 import { AuthModal } from './components/Auth/AuthModal';
-import { Heart, Shield, Sparkles, MapPin, Mail, ArrowRight, Globe, Share2, Compass, Lock } from 'lucide-react';
+import { Heart, Shield, Sparkles, MapPin, Mail, ArrowRight, Globe, Share2, Compass, Lock, Radio } from 'lucide-react';
 
 export const AppContent = () => {
   const { activeTab, setActiveTab, currentDestination, currentUser, setIsAuthModalOpen, setAuthMode } = useApp();
@@ -43,6 +44,7 @@ export const AppContent = () => {
                 {activeTab === 'digitalTwin' && `Live Crowd Density & Queue Clearance in ${currentDestination.name.split(',')[0]}`}
                 {activeTab === 'flow' && 'Avoid Queues with 1-Click VIP FastPasses'}
                 {activeTab === 'assistant' && 'Multilingual AI Travel Guide & Camera Translator'}
+                {activeTab === 'lostRadar' && `AI Proactive Lost Tourist & Anomaly Radar in ${currentDestination.name.split(',')[0]}`}
               </h2>
             </div>
 
@@ -112,6 +114,7 @@ export const AppContent = () => {
               {activeTab === 'digitalTwin' && <TravelDigitalTwin />}
               {activeTab === 'flow' && <SmartFlowDistribution />}
               {activeTab === 'assistant' && <ContextLanguageAssistant />}
+              {activeTab === 'lostRadar' && <LostTouristDetector />}
             </div>
           )}
         </div>

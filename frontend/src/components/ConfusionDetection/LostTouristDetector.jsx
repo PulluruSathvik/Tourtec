@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { apiService } from '../../services/apiService';
 import {
   Compass,
-  HelpCircle,
   AlertTriangle,
   RotateCw,
   Navigation,
@@ -17,48 +15,77 @@ import {
   Eye,
   MapPin,
   Sparkles,
-  Zap
+  Zap,
+  Volume2,
+  VolumeX,
+  Languages,
+  WifiOff,
+  Wifi,
+  Shield,
+  HelpCircle,
+  RefreshCw,
+  Clock,
+  Send
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const LostTouristDetector = () => {
-  const { currentDestination, setIsSosOpen, setActiveTab, setEcoPoints } = useApp();
+  const { currentDestination, setIsSosOpen, language, setEcoPoints } = useApp();
   const canvasRef = useRef(null);
 
-  const [mode, setMode] = useState('normal'); // 'normal' | 'lost_loop' | 'hesitation'
+  const cityName = currentDestination?.name?.split(',')[0]?.trim() || 'Varanasi';
+  const mainLandmark = currentDestination?.roadmap?.[0]?.title || currentDestination?.zones?.[0]?.name || `${cityName} Heritage Center`;
+
+  // 4 Core Anomaly Simulation Modes
+  const [anomalyMode, setAnomalyMode] = useState('lost_loop'); // 'normal' | 'lost_loop' | 'route_deviation' | 'stranded' | 'offline_lost'
+  const [isPermissionGranted, setIsPermissionGranted] = useState(true);
   const [trajectory, setTrajectory] = useState([]);
+  const [isSpeakingLocalCard, setIsSpeakingLocalCard] = useState(false);
+  const [selectedCardLang, setSelectedCardLang] = useState('hi'); // 'hi' | 'te' | 'ta' | 'kn' | 'bn' | 'mr' | 'en'
+
   const [anomalyData, setAnomalyData] = useState({
-    confusionScore: 12,
-    status: 'ON_TRACK',
-    isErratic: false,
+    confusionScore: 84,
+    status: 'CONFUSED_OR_LOST',
+    anomalyType: 'Circular Walking in Narrow Alleyways',
     indicators: {
-      circularityIndex: 'Normal (0.04)',
-      hesitationStops: '0 stops in 5m',
-      paceVariance: 'Stable (3.8 km/h)',
-      orientationEntropy: 'Aligned with heritage path'
+      circularityIndex: '0.89 (3 Loops in 12 mins)',
+      hesitationStops: '5 stops in last 3 mins',
+      paceVariance: 'Erratic (0.7 km/h in Gali)',
+      orientationEntropy: '180° Backtracking Inversions'
     },
-    actionableGuidance: 'Tourist path is linear and progressing smoothly along designated heritage corridor.'
+    actionableGuidance: `Proactive Anomaly: Tourist has passed the same intersection 3 times in ${cityName} narrow alleys. 1-Tap Line-of-sight rescue path to main promenade is ready.`
   });
 
-  const [recoveryApplied, setRecoveryApplied] = useState(false);
-  const [activeVisualLandmark, setActiveVisualLandmark] = useState(null);
+  const [isRescuePathActive, setIsRescuePathActive] = useState(false);
 
-  // Generate synthetic trajectory based on mode (Indian Alleyway / Gali context)
+  // Generate dynamic trajectory points based on anomaly scenario
   useEffect(() => {
     let points = [];
     const centerX = 200;
     const centerY = 150;
 
-    if (mode === 'normal') {
-      for (let i = 0; i < 15; i++) {
+    if (anomalyMode === 'normal') {
+      for (let i = 0; i < 16; i++) {
         points.push({
-          x: 50 + i * 22,
-          y: centerY + Math.sin(i * 0.4) * 25,
+          x: 40 + i * 22,
+          y: centerY + Math.sin(i * 0.4) * 20,
           angle: 0
         });
       }
-    } else if (mode === 'lost_loop') {
-      // Backtracking loops in narrow Varanasi / Old Jaipur galis
+      setAnomalyData({
+        confusionScore: 12,
+        status: 'ON_TRACK',
+        anomalyType: 'Smooth Forward Progression',
+        indicators: {
+          circularityIndex: '0.02 (Linear)',
+          hesitationStops: '0 stops in 10 mins',
+          paceVariance: 'Steady (3.8 km/h)',
+          orientationEntropy: 'Aligned with Heritage Corridor'
+        },
+        actionableGuidance: `Tourist journey is on track along ${cityName} designated tourist corridor.`
+      });
+    } else if (anomalyMode === 'lost_loop') {
+      // Backtracking loops in narrow heritage alleys
       for (let i = 0; i < 22; i++) {
         const rad = (i / 7) * Math.PI * 2;
         points.push({
@@ -67,433 +94,502 @@ export const LostTouristDetector = () => {
           angle: (rad * 180) / Math.PI
         });
       }
-    } else if (mode === 'hesitation') {
-      // Clustered stops and crowd confusion in market chowk
+      setAnomalyData({
+        confusionScore: 88,
+        status: 'CONFUSED_OR_LOST',
+        anomalyType: 'Circular Walking in Narrow Alleyways',
+        indicators: {
+          circularityIndex: '0.92 (3 Loops in 10 mins)',
+          hesitationStops: '6 stops at intersections',
+          paceVariance: 'Erratic (0.6 km/h in alley)',
+          orientationEntropy: '180° Direction Inversions'
+        },
+        actionableGuidance: `Proactive Anomaly: Repeated circular path detected in ${cityName} narrow galis. Tap below for direct bearing heading back to Main Heritage Promenade.`
+      });
+    } else if (anomalyMode === 'route_deviation') {
+      // Drifted 600m off planned path
+      for (let i = 0; i < 18; i++) {
+        points.push({
+          x: 40 + i * 16,
+          y: 60 + i * 12 + Math.sin(i * 0.6) * 15,
+          angle: 45
+        });
+      }
+      setAnomalyData({
+        confusionScore: 78,
+        status: 'ROUTE_DEVIATION',
+        anomalyType: 'Significant Route Deviation (>500m Off Path)',
+        indicators: {
+          circularityIndex: '0.24 (Drifting Outward)',
+          hesitationStops: '3 stops in unverified zone',
+          paceVariance: 'Fast Walking (5.2 km/h - possible rush)',
+          orientationEntropy: 'Perpendicular to Designated Corridor'
+        },
+        actionableGuidance: `Proactive Alert: You have drifted 540m off the planned heritage itinerary into an unverified zone. Return path to nearest safe corridor calculated.`
+      });
+    } else if (anomalyMode === 'stranded') {
+      // Stationary cluster in unverified area for 25 mins
       for (let i = 0; i < 16; i++) {
         points.push({
-          x: 100 + i * 6 + (Math.random() - 0.5) * 25,
-          y: centerY + (Math.random() - 0.5) * 30,
+          x: 180 + (Math.random() - 0.5) * 18,
+          y: 140 + (Math.random() - 0.5) * 18,
           angle: Math.random() * 360
         });
       }
+      setAnomalyData({
+        confusionScore: 92,
+        status: 'STRANDED_ANOMALY',
+        anomalyType: 'Prolonged Stationary Anomaly (>20 Mins)',
+        indicators: {
+          circularityIndex: 'N/A (Stationary Cluster)',
+          hesitationStops: 'Stationary for 22 mins',
+          paceVariance: '0.1 km/h (No Movement)',
+          orientationEntropy: 'High random orientation jitter'
+        },
+        actionableGuidance: `Proactive Safety Check: You have been stationary at an unusual location in ${cityName} for over 20 minutes without landmark check-in. Are you safe?`
+      });
+    } else if (anomalyMode === 'offline_lost') {
+      // Offline loss of network
+      for (let i = 0; i < 18; i++) {
+        points.push({
+          x: 100 + i * 12 + (Math.random() - 0.5) * 20,
+          y: 120 + (Math.random() - 0.5) * 25,
+          angle: Math.random() * 360
+        });
+      }
+      setAnomalyData({
+        confusionScore: 95,
+        status: 'OFFLINE_DISCONNECTED',
+        anomalyType: 'Zero Internet / Offline Mesh Emergency',
+        indicators: {
+          circularityIndex: 'Cached Trajectory Only',
+          hesitationStops: 'Network Signal Lost',
+          paceVariance: 'Sensor Dead-Reckoning Active',
+          orientationEntropy: 'Magnetic Compass Fallback'
+        },
+        actionableGuidance: `Offline Safety Activated: Internet lost in ${cityName}. All local assistance phrases, emergency numbers, and compass bearings are pre-cached on device.`
+      });
     }
 
     setTrajectory(points);
-    setRecoveryApplied(false);
+    setIsRescuePathActive(false);
+  }, [anomalyMode, cityName]);
 
-    // Call Backend Anomaly Analysis API
-    const analyze = async () => {
-      const res = await apiService.analyzeConfusionTrajectory({
-        trajectory: points.map(p => ({ lat: p.y, lng: p.x })),
-        recentAngles: points.map(p => p.angle),
-        averageSpeedKmh: mode === 'normal' ? 3.8 : 0.8
-      });
-
-      if (res) {
-        setAnomalyData(res);
-      } else {
-        const isConfused = mode !== 'normal';
-        setAnomalyData({
-          confusionScore: isConfused ? 88 : 14,
-          status: isConfused ? 'CONFUSED_OR_LOST' : 'ON_TRACK',
-          isErratic: isConfused,
-          indicators: {
-            circularityIndex: isConfused ? 'Critical (0.92 Loops in Galis)' : 'Normal (0.04)',
-            hesitationStops: isConfused ? '5 stops in 3m' : '0 stops',
-            paceVariance: isConfused ? 'Erratic (0.7 km/h in Gali)' : 'Stable (3.8 km/h)',
-            orientationEntropy: isConfused ? '180° Direction Inversions' : 'Aligned to Main Ghat'
-          },
-          actionableGuidance: isConfused
-            ? 'Anomaly Detected: Repeated circular path in narrow heritage galis. Tap below for direct bearing heading back to Godowlia Main Chowk & Riverfront promenade.'
-            : 'Tourist is moving smoothly along designated heritage corridor.'
-        });
-      }
-    };
-
-    analyze();
-  }, [mode]);
-
-  // Canvas visualizer for GPS trajectory (Light Theme)
+  // Canvas visualizer for GPS trajectory
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
 
-    canvas.width = canvas.parentElement.clientWidth || 400;
-    canvas.height = 300;
+    ctx.clearRect(0, 0, w, h);
 
-    // Light background
-    ctx.fillStyle = '#FAF9F6';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Light grid lines
-    ctx.strokeStyle = 'rgba(217, 119, 6, 0.1)';
+    // Draw Subtle Gali Grid Background
+    ctx.strokeStyle = '#F1F5F9';
     ctx.lineWidth = 1;
-    for (let x = 0; x < canvas.width; x += 25) {
+    for (let x = 0; x < w; x += 30) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvas.height);
+      ctx.lineTo(x, h);
       ctx.stroke();
     }
-    for (let y = 0; y < canvas.height; y += 25) {
+    for (let y = 0; y < h; y += 30) {
       ctx.beginPath();
       ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
+      ctx.lineTo(w, y);
       ctx.stroke();
     }
 
-    if (trajectory.length < 2) return;
-
-    // Draw GPS Breadcrumb Polyline Trail
+    // Draw Designated Corridor Baseline
+    ctx.strokeStyle = '#E2E8F0';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(trajectory[0].x, trajectory[0].y);
-    for (let i = 1; i < trajectory.length; i++) {
-      ctx.lineTo(trajectory[i].x, trajectory[i].y);
-    }
-
-    const isErratic = anomalyData.isErratic && !recoveryApplied;
-    ctx.strokeStyle = isErratic ? '#DC2626' : '#D97706';
-    ctx.lineWidth = 3.5;
+    ctx.moveTo(40, 150);
+    ctx.lineTo(360, 150);
     ctx.stroke();
 
-    // Draw Trail Waypoints
-    trajectory.forEach((p, idx) => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, idx === trajectory.length - 1 ? 6.5 : 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = idx === trajectory.length - 1 ? '#059669' : isErratic ? '#DC2626' : '#D97706';
-      ctx.fill();
-    });
+    // Draw Tourist Trajectory Path
+    if (trajectory.length > 1) {
+      const isConfused = anomalyData.confusionScore > 50;
+      ctx.strokeStyle = isConfused ? '#EF4444' : '#10B981';
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
 
-    // Draw Compass Bearing Origin (Target Main Chowk/Ghat)
-    if (isErratic) {
-      ctx.fillStyle = '#059669';
       ctx.beginPath();
-      ctx.arc(canvas.width - 60, 50, 10, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#0F172A';
-      ctx.font = 'bold 10px Plus Jakarta Sans';
-      ctx.fillText('MAIN CHOWK', canvas.width - 60, 72);
+      ctx.moveTo(trajectory[0].x, trajectory[0].y);
+      for (let i = 1; i < trajectory.length; i++) {
+        ctx.lineTo(trajectory[i].x, trajectory[i].y);
+      }
+      ctx.stroke();
+
+      // Trajectory Waypoints
+      trajectory.forEach((pt, i) => {
+        ctx.fillStyle = i === trajectory.length - 1 ? (isConfused ? '#DC2626' : '#059669') : '#94A3B8';
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, i === trajectory.length - 1 ? 6 : 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Draw Rescue Reroute Line if user activated path correction
+      if (isRescuePathActive && trajectory.length > 0) {
+        const lastPt = trajectory[trajectory.length - 1];
+        ctx.strokeStyle = '#2563EB';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(lastPt.x, lastPt.y);
+        ctx.lineTo(360, 150); // Direct line back to main promenade
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
-  }, [trajectory, anomalyData, recoveryApplied]);
+  }, [trajectory, anomalyData, isRescuePathActive]);
 
-  const handleApplyGuideBack = () => {
-    setRecoveryApplied(true);
-    setMode('normal');
-    setEcoPoints(p => p + 25);
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 }
-    });
+  // Multilingual "Ask a Local" Phrase Matrix
+  const localHelperPhrases = {
+    hi: {
+      lang: 'हिंदी (Hindi)',
+      native: `नमस्ते भाई साहब! मैं एक पर्यटक हूँ और रास्ता भूल गया हूँ। मुझे ${mainLandmark} जाना है। क्या आप कृपया मुझे सही रास्ता बता सकते हैं?`,
+      phonetic: `Namaste bhai sahab! Main ek tourist hoon aur rasta bhool gaya hoon. Mujhe ${mainLandmark} jaana hai. Kripya sahi rasta bataiye.`,
+      english: `Hello brother! I am a tourist and I am lost. I need to reach ${mainLandmark}. Can you please show me the right direction?`
+    },
+    te: {
+      lang: 'తెలుగు (Telugu)',
+      native: `నమస్కారం అండి! నేను టూరిస్ట్‌ని, దారి తప్పిపోయాను. నేను ${mainLandmark} వెళ్ళాలి. దయచేసి సరైన దారి చూపించగలరా?`,
+      phonetic: `Namaskaram andi! Nenu tourist-ni, daari thappipoyanu. Nenu ${mainLandmark} vellali. Dayachesi daari chupinchandi.`,
+      english: `Hello sir! I am a tourist and lost my way. I need to go to ${mainLandmark}. Please show the route.`
+    },
+    ta: {
+      lang: 'தமிழ் (Tamil)',
+      native: `வணக்கம் ஐயா! நான் ஒரு சுற்றுலாப் பயணி, வழி தெரியவில்லை. நான் ${mainLandmark} செல்ல வேண்டும். தயவுசெய்து சரியான வழியைக் காட்டுங்கள்.`,
+      phonetic: `Vanakkam aiya! Naan tourist, vazhi theriya villai. Naan ${mainLandmark} sella vendum. Vazhi kaattungal.`,
+      english: `Hello sir! I am a tourist and lost my way to ${mainLandmark}. Please guide me.`
+    },
+    kn: {
+      lang: 'ಕನ್ನಡ (Kannada)',
+      native: `ನಮಸ್ಕಾರ ಸರ್! ನಾನು ಪ್ರವಾಸಿ, ದಾರಿ ತಪ್ಪಿದ್ದೇನೆ. ನಾನು ${mainLandmark} ಗೆ ಹೋಗಬೇಕು. ದಯವಿಟ್ಟು ಸರಿಯಾದ ದಾರಿ ತೋರಿಸಿ.`,
+      phonetic: `Namaskara sir! Naanu pravasi, daari thappiddeene. Naanu ${mainLandmark} ge hogabeku. Daari thorisi.`,
+      english: `Hello sir! I am a tourist and lost my route to ${mainLandmark}. Please guide me.`
+    },
+    bn: {
+      lang: 'বাংলা (Bengali)',
+      native: `নমস্কার দাদা! আমি একজন পর্যটক এবং পথ হারিয়ে ফেলেছি। আমাকে ${mainLandmark} যেতে হবে। দয়া করে সঠিক রাস্তাটি দেখান।`,
+      phonetic: `Nomoshkar dada! Aami tourist, poth hariye felechi. Aamake ${mainLandmark} jete hobe.`,
+      english: `Hello brother! I am a tourist and lost my way to ${mainLandmark}.`
+    },
+    mr: {
+      lang: 'मराठी (Marathi)',
+      native: `नमस्कार काका! मी एक पर्यटक आहे आणि रस्ता चुकलो आहे. मला ${mainLandmark} येथे जायचे आहे. कृपया योग्य रस्ता दाखवा.`,
+      phonetic: `Namaskar! Me tourist ahe ani rasta chuklo ahe. Mala ${mainLandmark} la jayche ahe.`,
+      english: `Hello! I am a tourist and lost my way to ${mainLandmark}.`
+    },
+    en: {
+      lang: 'English (India)',
+      native: `Excuse me, Namaste! I am a tourist and I seem to be lost. I am trying to reach ${mainLandmark}. Could you please point me in the right direction?`,
+      phonetic: `Excuse me! Lost tourist heading to ${mainLandmark}.`,
+      english: `Excuse me! Lost tourist heading to ${mainLandmark}.`
+    }
   };
 
-  const isConfused = (anomalyData.confusionScore > 50 || anomalyData.isErratic) && !recoveryApplied;
+  const currentLocalPhrase = localHelperPhrases[selectedCardLang] || localHelperPhrases.hi;
+
+  // Speak Local Help Phrase Aloud via Phone Speaker
+  const handleSpeakLocalPhrase = () => {
+    if ('speechSynthesis' in window) {
+      if (isSpeakingLocalCard) {
+        window.speechSynthesis.cancel();
+        setIsSpeakingLocalCard(false);
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(currentLocalPhrase.native);
+      utterance.lang = selectedCardLang === 'hi' ? 'hi-IN' : selectedCardLang === 'te' ? 'te-IN' : selectedCardLang === 'ta' ? 'ta-IN' : 'en-IN';
+      utterance.rate = 0.88;
+
+      utterance.onstart = () => setIsSpeakingLocalCard(true);
+      utterance.onend = () => setIsSpeakingLocalCard(false);
+      utterance.onerror = () => setIsSpeakingLocalCard(false);
+
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // 1-Tap Path Correction
+  const handleApplyPathCorrection = () => {
+    setIsRescuePathActive(true);
+    confetti({ particleCount: 50, spread: 70 });
+    alert(`🧭 Proactive Path Correction Applied! Direct straight-line bearing (Heading 120° East) back to ${mainLandmark} promenade.`);
+  };
 
   return (
-    <div className="space-y-6 animate-fadeIn w-full">
-      
-      {/* Header (Light Theme) */}
-      <div className="bg-white border border-slate-200 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <div className={`p-3 rounded-2xl border ${
-            isConfused ? 'bg-red-100 text-red-700 border-red-300 animate-pulse' : 'bg-amber-100 text-amber-700 border-amber-300'
-          }`}>
-            <HelpCircle className="w-6 h-6" />
+    <div className="space-y-6">
+
+      {/* TOP INNOVATION HERO BANNER */}
+      <div className="bg-gradient-to-r from-red-950 via-slate-900 to-slate-950 text-white p-6 rounded-3xl shadow-xl border border-red-500/30 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute -right-12 -top-12 w-80 h-80 bg-red-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="space-y-2 relative z-10">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-400/40 text-red-300 text-xs font-black">
+            <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
+            <span>TOURTEC Proactive Innovation • Patent-Ready</span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-900 font-heritage">Lost Tourist & Gali Confusion Anomaly AI</h2>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                isConfused
-                  ? 'bg-red-100 text-red-900 border border-red-300 animate-pulse'
-                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-              }`}>
-                {isConfused ? '🚨 ANOMALY: TOURIST DISORIENTED IN GALIS' : '✓ HERITAGE CORRIDOR ON-TRACK'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-600 font-medium mt-0.5">
-              Trajectory pattern recognition detects wandering in dense historic alleyways, bazaar loops, and rapid direction reversals.
-            </p>
-          </div>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-heritage">
+            AI Proactive Lost Tourist & Anomaly Radar
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-medium leading-relaxed">
+            Unlike reactive GPS apps that wait for you to panic, TOURTEC proactively detects confusion patterns (walking in circles, route deviation, prolonged stillness, or lost signal) in <strong>{cityName}</strong> and offers instant multilingual rescue guidance.
+          </p>
         </div>
 
-        {/* Simulation Pattern Selector */}
-        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-300">
-          <span className="text-[10px] uppercase font-bold text-slate-500 px-2">Simulate Pattern:</span>
+        {/* Live Safety Status Indicator Badge */}
+        <div className="p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center gap-3.5 flex-shrink-0 relative z-10">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shadow-md ${
+            anomalyData.confusionScore > 50 ? 'bg-red-500 text-white animate-pulse' : 'bg-emerald-500 text-slate-950'
+          }`}>
+            {anomalyData.confusionScore}%
+          </div>
+          <div>
+            <div className="text-[10px] uppercase font-bold text-slate-400">Confusion Risk Score</div>
+            <div className={`text-xs font-black ${anomalyData.confusionScore > 50 ? 'text-red-300' : 'text-emerald-300'}`}>
+              {anomalyData.status}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* INTERACTIVE SCENARIO SIMULATOR SELECTOR */}
+      <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Radio className="w-4 h-4 text-red-600 animate-pulse" />
+            <h3 className="text-xs font-black uppercase text-slate-900 tracking-wider">
+              Test Real-Time Tourist Anomaly Patterns:
+            </h3>
+          </div>
+          <span className="text-[11px] text-slate-400 font-bold">Select a scenario to test proactive AI intervention</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
           {[
-            { id: 'normal', label: 'Linear Path' },
-            { id: 'lost_loop', label: 'Narrow Gali Looping' },
-            { id: 'hesitation', label: 'Market Chowk Stutter' }
-          ].map(m => (
+            { id: 'lost_loop', label: '🔄 Walking in Circles', sub: 'Repeated Loops in Galis', alertColor: 'text-red-600' },
+            { id: 'route_deviation', label: '⚠️ Route Deviation', sub: 'Drifted >500m Off-Path', alertColor: 'text-amber-600' },
+            { id: 'stranded', label: '⏳ Stranded Stillness', sub: 'No Movement for >20m', alertColor: 'text-orange-600' },
+            { id: 'offline_lost', label: '📶 Offline & No Internet', sub: 'Dead-Zone Emergency', alertColor: 'text-purple-600' },
+            { id: 'normal', label: '🏃 Smooth On-Track', sub: 'Linear Normal Journey', alertColor: 'text-emerald-600' }
+          ].map((item) => (
             <button
-              key={m.id}
-              onClick={() => setMode(m.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                mode === m.id
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
+              key={item.id}
+              onClick={() => setAnomalyMode(item.id)}
+              className={`p-3 rounded-2xl text-left border transition cursor-pointer ${
+                anomalyMode === item.id
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-md font-bold'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200 font-medium'
               }`}
             >
-              {m.label}
+              <div className="text-xs font-black truncate">{item.label}</div>
+              <div className={`text-[10px] mt-0.5 ${anomalyMode === item.id ? 'text-slate-300' : item.alertColor}`}>
+                {item.sub}
+              </div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Quick Explainer Bar: How Lost Tourist Detection Works */}
-      <div className="bg-amber-50/80 border border-amber-200 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-700">
-        <div className="flex items-center gap-2 font-bold text-amber-950">
-          <HelpCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-          <span>How Confusion Detection Works:</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 font-medium">
-          <span>1️⃣ <strong>Entropy Algorithms</strong> detect backtracking loops in narrow heritage galis</span>
-          <span>•</span>
-          <span>2️⃣ <strong>1-Tap Bearing Compass</strong> directs you straight back to the main avenue/ghat</span>
-          <span>•</span>
-          <span>3️⃣ <strong>360° Sightline Landmarks</strong> provide visual navigation even with zero GPS signal</span>
-        </div>
-      </div>
-
-      {/* Main Grid */}
+      {/* MAIN TWO-COLUMN WORKSPACE: TRAJECTORY RADAR & ACTIONABLE RESCUE CARDS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left 6 Cols: GPS Trajectory Breadcrumb Canvas & Anomaly Score */}
+
+        {/* LEFT 6 COLS: REAL-TIME TRAJECTORY CANVAS & METRICS */}
+        <div className="lg:col-span-6 bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-blue-600" />
+              <h4 className="text-sm font-black text-slate-900">Live GPS Trajectory & Gali Geometry Radar</h4>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 bg-slate-100 rounded-md text-slate-600">
+              Pattern: {anomalyData.anomalyType}
+            </span>
+          </div>
+
+          {/* Canvas Map Radar */}
+          <div className="relative rounded-2xl overflow-hidden bg-slate-50 border border-slate-200 shadow-inner">
+            <canvas ref={canvasRef} width={400} height={280} className="w-full h-64 object-contain" />
+            
+            {/* Overlay Indicator Pills */}
+            <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 backdrop-blur-md rounded-xl text-[10px] font-bold text-slate-700 border border-slate-200 shadow-xs">
+              📍 Heritage Corridor: {mainLandmark}
+            </div>
+
+            <div className="absolute bottom-3 right-3 px-2.5 py-1 bg-slate-900/85 backdrop-blur-md rounded-xl text-[10px] font-mono text-white flex items-center gap-1.5 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+              <span>GPS Tracking Active</span>
+            </div>
+          </div>
+
+          {/* Anomaly Sensor Metrics Grid */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Circularity Ratio</span>
+              <strong className="text-slate-900 font-mono text-xs">{anomalyData.indicators.circularityIndex}</strong>
+            </div>
+
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Hesitation Stops</span>
+              <strong className="text-slate-900 font-mono text-xs">{anomalyData.indicators.hesitationStops}</strong>
+            </div>
+
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Pace & Speed Variance</span>
+              <strong className="text-slate-900 font-mono text-xs">{anomalyData.indicators.paceVariance}</strong>
+            </div>
+
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Orientation Entropy</span>
+              <strong className="text-slate-900 font-mono text-xs truncate block">{anomalyData.indicators.orientationEntropy}</strong>
+            </div>
+          </div>
+
+        </div>
+
+        {/* RIGHT 6 COLS: PROACTIVE RESCUE INTERVENTIONS & "ASK A LOCAL" FLASHCARD */}
         <div className="lg:col-span-6 space-y-4">
-          
-          <div className="bg-white border border-slate-200 p-5 rounded-2xl space-y-4 shadow-sm">
+
+          {/* 1. PROACTIVE INTERVENTION CARD */}
+          <div className={`p-5 rounded-3xl border shadow-sm space-y-3.5 transition-all ${
+            anomalyData.confusionScore > 50 ? 'bg-red-50/70 border-red-200' : 'bg-emerald-50/70 border-emerald-200'
+          }`}>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Footprints className="w-4 h-4 text-amber-600" />
-                <span>Live GPS Trajectory Breadcrumb Stream</span>
-              </h3>
-              <span className="text-xs text-amber-800 font-mono font-bold">
-                {trajectory.length} Pings Analyzed
+              <div className="flex items-center gap-2">
+                {anomalyData.confusionScore > 50 ? (
+                  <AlertTriangle className="w-5 h-5 text-red-600 animate-bounce" />
+                ) : (
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                )}
+                <h4 className="text-sm font-black text-slate-900">
+                  {anomalyData.confusionScore > 50 ? 'Proactive Assistance Triggered' : 'Journey Health: Optimal'}
+                </h4>
+              </div>
+              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                anomalyData.confusionScore > 50 ? 'bg-red-100 text-red-900' : 'bg-emerald-100 text-emerald-900'
+              }`}>
+                Auto-Detected
               </span>
             </div>
 
-            <div className="relative bg-[#FAF9F6] border border-slate-300 rounded-2xl overflow-hidden shadow-inner">
-              <canvas ref={canvasRef} className="w-full block" />
-              
-              <div className="absolute bottom-2.5 left-3 text-[10px] text-slate-700 font-mono bg-white/90 px-2.5 py-1 rounded-md border border-slate-200 shadow-sm font-semibold">
-                Gali Trajectory: {isConfused ? 'Alleyway Looping Detected' : 'Forward Smooth Progression'}
-              </div>
-            </div>
-          </div>
+            <p className="text-xs text-slate-700 font-medium leading-relaxed bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+              {anomalyData.actionableGuidance}
+            </p>
 
-          {/* Anomaly Indicators Breakdown */}
-          <div className="bg-white border border-slate-200 p-5 rounded-2xl space-y-3 shadow-sm">
-            <h3 className="font-bold text-xs text-slate-500 uppercase tracking-wider">
-              Entropy & Behavioral Metrics (Heritage Grid)
-            </h3>
-
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-[10px] uppercase font-bold">Circularity Index</span>
-                <div className={`font-bold font-mono mt-0.5 ${isConfused ? 'text-red-700' : 'text-emerald-700'}`}>
-                  {anomalyData.indicators?.circularityIndex || 'Normal'}
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-[10px] uppercase font-bold">Hesitation Stops</span>
-                <div className={`font-bold font-mono mt-0.5 ${isConfused ? 'text-amber-800' : 'text-cyan-700'}`}>
-                  {anomalyData.indicators?.hesitationStops || '0 stops'}
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-[10px] uppercase font-bold">Pace Variance</span>
-                <div className="font-bold font-mono text-slate-900 mt-0.5">
-                  {anomalyData.indicators?.paceVariance || 'Stable (3.8 km/h)'}
-                </div>
-              </div>
-
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                <span className="text-slate-500 text-[10px] uppercase font-bold">Confusion Risk</span>
-                <div className={`font-black font-mono text-base mt-0.5 ${
-                  isConfused ? 'text-red-700' : 'text-emerald-700'
-                }`}>
-                  {anomalyData.confusionScore || 12} / 100
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Right 6 Cols: Intelligent Confusion Assistance & Visual Landmarks */}
-        <div className="lg:col-span-6 space-y-4">
-          
-          {/* Active Confusion Assistance Card */}
-          {isConfused ? (
-            <div className="bg-red-50 border-2 border-red-300 p-6 rounded-3xl space-y-5 shadow-md animate-fadeIn">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-red-100 border border-red-300 flex items-center justify-center text-red-600">
-                  <AlertTriangle className="w-6 h-6 animate-bounce" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900">Gali Disorientation Alert Triggered</h3>
-                  <p className="text-xs text-red-700 font-bold">Tourist is backtracking in narrow alleys</p>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-800 leading-relaxed bg-white p-3.5 rounded-2xl border border-red-200 font-medium">
-                {anomalyData.actionableGuidance}
-              </p>
-
-              {/* Bearing Compass Widget */}
-              <div className="bg-white p-4 rounded-2xl border border-amber-300 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-amber-50 border-2 border-amber-500 flex items-center justify-center text-amber-700 shadow-sm">
-                    <Navigation className="w-6 h-6 transform rotate-45 animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-slate-500 uppercase font-bold">Bearing Heading to Main Chowk / Riverfront</div>
-                    <div className="text-base font-black text-slate-900 font-mono">45° Northeast • 180 meters</div>
-                  </div>
-                </div>
-
-                <span className="text-[10px] px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 font-bold border border-amber-300">
-                  DIRECT LINE
-                </span>
-              </div>
-
-              {/* One-Tap Recovery Buttons */}
-              <div className="space-y-2.5">
+            {/* 1-Tap Rescue Buttons */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {anomalyData.confusionScore > 50 && (
                 <button
-                  onClick={handleApplyGuideBack}
-                  className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
+                  onClick={handleApplyPathCorrection}
+                  className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Compass className="w-4 h-4" /> 🧭 1-Tap Guide Me Back to Main Chowk (+₹25 Pts)
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>1-Tap Path Correction</span>
                 </button>
+              )}
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setActiveTab('assistant')}
-                    className="py-2.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 transition flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    <PhoneCall className="w-4 h-4 text-amber-600" /> Tourist Police Mitra
-                  </button>
+              <button
+                onClick={() => setIsSosOpen(true)}
+                className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Emergency SOS</span>
+              </button>
+            </div>
+          </div>
 
-                  <button
-                    onClick={() => setIsSosOpen(true)}
-                    className="py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2"
-                  >
-                    <Radio className="w-4 h-4 animate-ping" /> Dispatch SOS
-                  </button>
-                </div>
+          {/* 2. MULTILINGUAL "ASK A LOCAL" FLASHCARD (BRIDGES LANGUAGE BARRIERS) */}
+          <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm space-y-3.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Languages className="w-4 h-4 text-amber-600" />
+                <h4 className="text-xs font-black uppercase text-slate-900">
+                  "Ask a Local" Multilingual Helper Card
+                </h4>
+              </div>
+
+              {/* Language Selector */}
+              <select
+                value={selectedCardLang}
+                onChange={(e) => setSelectedCardLang(e.target.value)}
+                className="p-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-800 focus:outline-none cursor-pointer"
+              >
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="te">తెలుగు (Telugu)</option>
+                <option value="ta">தமிழ் (Tamil)</option>
+                <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="mr">मराठी (Marathi)</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+
+            <p className="text-[11px] text-slate-500 font-medium">
+              Show this card to any local shopkeeper or bystander in <strong>{cityName}</strong>, or tap the button to let your phone speak for you!
+            </p>
+
+            {/* Native Script Flashcard */}
+            <div className="p-4 bg-amber-50/80 border-2 border-amber-300 rounded-2xl space-y-2">
+              <div className="text-xs sm:text-sm font-heritage font-black text-slate-950 leading-relaxed">
+                "{currentLocalPhrase.native}"
+              </div>
+              <div className="text-[11px] font-mono text-amber-900 font-medium pt-1 border-t border-amber-200">
+                🗣️ Pronunciation: <em>{currentLocalPhrase.phonetic}</em>
               </div>
             </div>
-          ) : (
-            <div className="bg-white border border-slate-200 p-6 rounded-3xl space-y-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
+
+            {/* Audio Speaker Button */}
+            <button
+              onClick={handleSpeakLocalPhrase}
+              className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm cursor-pointer ${
+                isSpeakingLocalCard
+                  ? 'bg-amber-500 text-slate-950 animate-pulse font-black'
+                  : 'bg-slate-900 hover:bg-slate-800 text-white'
+              }`}
+            >
+              <Volume2 className="w-4 h-4 text-amber-400" />
+              <span>{isSpeakingLocalCard ? 'Speaking to Local...' : '🔊 Speak Aloud to Local in ' + currentLocalPhrase.lang}</span>
+            </button>
+          </div>
+
+          {/* 3. NEAREST VERIFIED SAFE HAVENS */}
+          <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm space-y-2.5">
+            <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+              <span className="font-black text-slate-900 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Nearest Safe Havens within 300m in {cityName}:</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
                 <div>
-                  <h3 className="font-extrabold text-base text-slate-900">Yatri Flow Confirmed on Route</h3>
-                  <p className="text-xs text-emerald-700 font-bold">Pace is linear and matching heritage itinerary</p>
+                  <strong className="text-slate-900 block font-bold">Tourist Police Booth #2</strong>
+                  <span className="text-[10px] text-slate-500">120m away • 24/7 Staffed</span>
                 </div>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-lg">Safe</span>
               </div>
 
-              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200 font-medium">
-                The anomaly scanner evaluates GPS vectors. If you enter narrow heritage galis where satellite GPS weakens, use the 360° Visual Landmark Orientation helper below for instant line-of-sight direction cues.
-              </p>
-            </div>
-          )}
-
-          {/* 360° Visual Landmark Orientation Helper */}
-          <div className="bg-white border border-slate-200 p-5 rounded-2xl space-y-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Eye className="w-4 h-4 text-amber-600" />
-                <span>360° Visual Landmark Sightlines (GPS-Denied)</span>
-              </h3>
-              <span className="text-[10px] text-amber-800 font-mono font-bold">3 SIGHTLINES ACTIVE</span>
-            </div>
-
-            <div className="space-y-3">
-              {(currentDestination.visualLandmarks || []).map(lm => (
-                <div
-                  key={lm.id}
-                  className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3 hover:border-amber-400 transition cursor-pointer"
-                  onClick={() => setActiveVisualLandmark(lm)}
-                >
-                  <img
-                    src={lm.image}
-                    alt={lm.name}
-                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-slate-900 truncate">{lm.name}</h4>
-                      <span className="text-[10px] font-mono text-amber-700 font-bold ml-1">{lm.bearing}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5 font-medium">{lm.visualCue}</p>
-                    <span className="text-[10px] text-emerald-700 font-mono mt-0.5 block font-bold">Distance: {lm.distance}</span>
-                  </div>
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <strong className="text-slate-900 block font-bold">ASI Verified Help Desk</strong>
+                  <span className="text-[10px] text-slate-500">210m away • Free RO Water</span>
                 </div>
-              ))}
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold text-[10px] rounded-lg">Official</span>
+              </div>
             </div>
           </div>
 
         </div>
 
       </div>
-
-      {/* Visual Landmark Detail Modal */}
-      {activeVisualLandmark && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white border border-slate-200 max-w-md w-full rounded-3xl overflow-hidden shadow-2xl space-y-4">
-            <div className="relative h-44 bg-slate-100">
-              <img
-                src={activeVisualLandmark.image}
-                alt={activeVisualLandmark.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <button
-                onClick={() => setActiveVisualLandmark(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 text-slate-800 flex items-center justify-center hover:bg-white font-bold"
-              >
-                ✕
-              </button>
-              <div className="absolute bottom-3 left-4 right-4 text-white">
-                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-bold">
-                  SIGHTLINE ORIENTATION
-                </span>
-                <h3 className="text-base font-black text-white mt-1">{activeVisualLandmark.name}</h3>
-              </div>
-            </div>
-
-            <div className="p-5 pt-0 space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-slate-500 text-[10px] font-bold">Compass Angle:</span>
-                  <div className="text-amber-800 font-bold font-mono mt-0.5">{activeVisualLandmark.bearing}</div>
-                </div>
-                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                  <span className="text-slate-500 text-[10px] font-bold">Estimated Distance:</span>
-                  <div className="text-emerald-700 font-bold font-mono mt-0.5">{activeVisualLandmark.distance}</div>
-                </div>
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 font-medium">
-                <strong className="text-slate-900 block mb-1">Visual Orientation Cue:</strong>
-                {activeVisualLandmark.visualCue}
-              </div>
-
-              <button
-                onClick={() => setActiveVisualLandmark(null)}
-                className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl transition shadow-sm"
-              >
-                Got It, Oriented!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
