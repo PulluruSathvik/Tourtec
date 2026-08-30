@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { getHeritageDataForCity } from '../../services/heritageTimeMachineService';
 import {
   History,
   Hourglass,
@@ -19,7 +20,8 @@ import {
   Shield,
   Zap,
   MapPin,
-  Clock
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -32,79 +34,24 @@ export const HeritageTimeMachine = () => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAiNarrating, setIsAiNarrating] = useState(false);
 
-  const cityName = currentDestination.name.split(',')[0].trim();
+  const cityName = currentDestination?.name?.split(',')[0]?.trim() || 'Varanasi';
+
+  // Dynamically resolve 100% accurate heritage timeline data for the current active city
+  const heritageData = getHeritageDataForCity(currentDestination?.name || 'Varanasi');
+  const eras = heritageData.eras;
+  const currentEra = eras[selectedEraIndex] || eras[0];
+
   const audioContextRef = useRef(null);
   const oscillatorRef = useRef(null);
 
-  // Era Timeline Matrix
-  const eras = [
-    {
-      year: '1591 AD',
-      tag: 'Qutb Shahi Golden Age',
-      monument: `${cityName} Royal Citadel`,
-      ruler: 'Sultan Muhammad Quli Qutb Shah',
-      description: 'The monumental arches rise above fresh lime-plaster courtyards. Royal Persian merchants trade turquoise and Golconda diamonds beneath the majestic four minarets.',
-      ancientImage: 'https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?q=80&w=1200&auto=format&fit=crop',
-      modernImage: 'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=1200&auto=format&fit=crop',
-      secrets: [
-        'Secret subterranean escape tunnel connecting the central arch to Golconda Fort.',
-        'Acoustic echo chambers in the upper gallery allowed guards to detect whispered threats 40 meters away.',
-        'Persian stucco motifs infused with sandalwood oil to repel insects centuries ago.'
-      ],
-      soundLabel: 'Royal Shenai & Persian Nagara Drums',
-      toneFreq: 220
-    },
-    {
-      year: '1857 AD',
-      tag: 'Nizami & Victorian Era',
-      monument: `${cityName} Pearl Capital`,
-      ruler: 'Nizam Asaf Jah V',
-      description: 'The era of royal banquets, horse-drawn buggies, and the founding of the world-famous Laad Bazaar glass & pearl crafts around the illuminated monument.',
-      ancientImage: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=1200&auto=format&fit=crop',
-      modernImage: 'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=1200&auto=format&fit=crop',
-      secrets: [
-        'Installation of historic iron clock faces in 1889 imported from London.',
-        'Underground reservoir wells supplied mineral water to over 20,000 pilgrims daily.',
-        'Exclusive Nizami pearl testing vaults built inside the northern arch.'
-      ],
-      soundLabel: 'Old Bazaar Chimes & Horse Tram Soundscape',
-      toneFreq: 330
-    },
-    {
-      year: '1948 AD',
-      tag: 'Independent India Republic',
-      monument: `${cityName} National Heritage`,
-      ruler: 'Union of India',
-      description: 'The monument is declared a protected National Monument of Importance under the Archaeological Survey of India (ASI) with scientific structural preservation.',
-      ancientImage: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=1200&auto=format&fit=crop',
-      modernImage: 'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=1200&auto=format&fit=crop',
-      secrets: [
-        'Discovery of original 16th century drainage conduits behind lime plaster.',
-        'Strengthening of eastern foundation against Musi river groundwater fluctuations.',
-        'Establishment of heritage pedestrian buffer zone.'
-      ],
-      soundLabel: 'Historic Radio Broadcast & Temple Bells',
-      toneFreq: 440
-    },
-    {
-      year: '2026 AD',
-      tag: 'TOURTEC AI Digital Twin Era',
-      monument: `${cityName} Smart Heritage Hub`,
-      ruler: 'Smart Tourism Board',
-      description: 'Hyper-connected smart tourism destination with LiDAR crowd density radars, holographic AI guides, zero-emission EV shuttles, and instant FastPasses.',
-      ancientImage: 'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=1200&auto=format&fit=crop',
-      modernImage: 'https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=1200&auto=format&fit=crop',
-      secrets: [
-        'Micro-vibration seismic sensors safeguard against crowd footfall fatigue.',
-        'Solar powered evening smart illumination reducing 95% carbon footprint.',
-        'Direct AR navigation with holographic sign translations in 7 Indian languages.'
-      ],
-      soundLabel: 'Futuristic Ambient Drone & Smart Chimes',
-      toneFreq: 528
+  // Reset selected era index to 0 when city changes
+  useEffect(() => {
+    setSelectedEraIndex(0);
+    if (isAiNarrating && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsAiNarrating(false);
     }
-  ];
-
-  const currentEra = eras[selectedEraIndex];
+  }, [currentDestination]);
 
   // Synthesize Ambient Era Audio
   const toggleAmbientSound = () => {
@@ -126,7 +73,7 @@ export const HeritageTimeMachine = () => {
       const gain = ctx.createGain();
 
       osc.type = selectedEraIndex === 3 ? 'sine' : selectedEraIndex === 0 ? 'triangle' : 'sawtooth';
-      osc.frequency.setValueAtTime(currentEra.toneFreq, ctx.currentTime);
+      osc.frequency.setValueAtTime(currentEra.toneFreq || 440, ctx.currentTime);
 
       gain.gain.setValueAtTime(0.08, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 4);
@@ -156,8 +103,9 @@ export const HeritageTimeMachine = () => {
       }
 
       window.speechSynthesis.cancel();
-      const narrationText = `Welcome to ${currentEra.year}, the ${currentEra.tag}. In this era under ${currentEra.ruler}, ${currentEra.description} Secret architectural insight: ${currentEra.secrets[0]}`;
+      const narrationText = `Welcome to ${currentEra.year}, the ${currentEra.tag} of ${heritageData.cityName}. In this era under ${currentEra.ruler}, ${currentEra.description} Key architectural secret: ${currentEra.secrets[0]}`;
       const utterance = new SpeechSynthesisUtterance(narrationText);
+      utterance.lang = language === 'hi' ? 'hi-IN' : language === 'te' ? 'te-IN' : 'en-IN';
       utterance.rate = 0.92;
 
       utterance.onstart = () => setIsAiNarrating(true);
@@ -171,7 +119,7 @@ export const HeritageTimeMachine = () => {
   // Download Postcard
   const handleDownloadPostcard = () => {
     confetti({ particleCount: 80, spread: 80 });
-    alert(`🎉 Vintage Heritage Postcard from ${currentEra.year} saved to your gallery!`);
+    alert(`🎉 Vintage Heritage Postcard from ${currentEra.year} in ${heritageData.cityName} saved to your gallery!`);
   };
 
   return (
@@ -187,10 +135,10 @@ export const HeritageTimeMachine = () => {
             <span>AI Augmented Heritage Time Machine</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-heritage">
-            Travel Through Centuries: {cityName} (1591 – 2026 AD)
+            Travel Through Centuries: {heritageData.monumentName}
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 max-w-2xl font-medium">
-            Slide through 500+ years of royal history. Compare ancient architecture against modern day with interactive X-Ray blueprints & ambient soundscapes.
+            Explore authentic historical eras for <strong className="text-amber-300">{heritageData.cityName}</strong>. Slide through centuries of royal architecture, engineering secrets & ambient soundscapes.
           </p>
         </div>
 
@@ -210,7 +158,7 @@ export const HeritageTimeMachine = () => {
       {/* ERA SELECTOR TIMELINE SLIDER */}
       <div className="bg-white border border-slate-200 p-4 rounded-3xl shadow-sm">
         <div className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center justify-between">
-          <span>Select Historical Era</span>
+          <span>Select Historical Era for {heritageData.cityName}</span>
           <span className="text-blue-600 font-bold">Currently Viewing: {currentEra.year}</span>
         </div>
 
@@ -275,7 +223,7 @@ export const HeritageTimeMachine = () => {
             {/* Modern Image (Base Layer) */}
             <img
               src={currentEra.modernImage}
-              alt="Modern View"
+              alt={`${heritageData.cityName} Modern View`}
               className={`w-full h-full object-cover transition ${isXrayMode ? 'invert opacity-70 hue-rotate-180' : ''}`}
             />
             <div className="absolute top-3 right-3 px-2.5 py-1 bg-slate-900/80 backdrop-blur-md rounded-xl text-[10px] font-black text-white border border-white/20">
@@ -289,7 +237,7 @@ export const HeritageTimeMachine = () => {
             >
               <img
                 src={currentEra.ancientImage}
-                alt="Historic Era View"
+                alt={`${heritageData.cityName} Historic Era View`}
                 className={`absolute inset-0 w-[800px] h-full object-cover max-w-none ${
                   selectedEraIndex === 0 ? 'sepia-80 contrast-125' : selectedEraIndex === 1 ? 'sepia-50' : 'grayscale-50'
                 } ${isXrayMode ? 'invert brightness-125' : ''}`}
@@ -313,9 +261,9 @@ export const HeritageTimeMachine = () => {
             {isXrayMode && (
               <div className="absolute inset-0 border-2 border-cyan-400/80 bg-cyan-950/30 backdrop-blur-2xs flex flex-col justify-end p-4 pointer-events-none z-10">
                 <div className="p-3 bg-cyan-950/90 border border-cyan-400 rounded-xl text-cyan-200 text-xs space-y-1">
-                  <div className="font-mono font-black text-cyan-300">📐 STRUCTURAL BLUEPRINT & ACOUSTIC MESH ACTIVE</div>
-                  <div>• Foundation: 428-year Granite & Lime Mortar Substructure</div>
-                  <div>• Acoustic Resonance: 16-Pillar Sound Funnel Amplification</div>
+                  <div className="font-mono font-black text-cyan-300">📐 STRUCTURAL BLUEPRINT & MESH ACTIVE: {heritageData.monumentName}</div>
+                  <div>• Heritage Foundation: Ancient Interlocking Stone & Lime Mortar Geometry</div>
+                  <div>• Acoustic Resonance: Harmonic Funnel Geometry across {heritageData.cityName}</div>
                 </div>
               </div>
             )}
@@ -350,7 +298,7 @@ export const HeritageTimeMachine = () => {
                 <Clock className="w-4 h-4 text-amber-600" />
                 <h4 className="text-xs font-black uppercase text-slate-900">{currentEra.year} Chronicle</h4>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full">
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full truncate max-w-[200px]">
                 👑 {currentEra.ruler}
               </span>
             </div>
@@ -398,7 +346,7 @@ export const HeritageTimeMachine = () => {
               className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Save {currentEra.year} Time-Travel Postcard</span>
+              <span>Save {heritageData.cityName} ({currentEra.year}) Postcard</span>
             </button>
 
           </div>
