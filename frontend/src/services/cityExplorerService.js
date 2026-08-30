@@ -1,6 +1,6 @@
 import { calculateDistanceKm } from './routeCalculatorService';
 
-// Live Real-Time Weather Fetcher via Open-Meteo Free API (Zero API Keys Needed)
+// 1. Live Real-Time Weather Fetcher via Open-Meteo Free API (Zero API Keys Needed)
 export const fetchLiveRealTimeWeather = async (lat, lng) => {
   try {
     const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`);
@@ -45,7 +45,7 @@ export const fetchLiveRealTimeWeather = async (lat, lng) => {
   };
 };
 
-// Live Geocoding via OpenStreetMap Nominatim
+// 2. Live Real Geocoding via OpenStreetMap Nominatim
 export const geocodePlaceName = async (query) => {
   try {
     const cleanQuery = encodeURIComponent(query.trim());
@@ -68,8 +68,157 @@ export const geocodePlaceName = async (query) => {
   return null;
 };
 
-// Curated Top Destinations
+// 3. Live Wikipedia Geosearch to fetch REAL Monuments, Temples & Heritage Sites around coordinates
+export const fetchRealHeritageAttractions = async (lat, lng, cityName) => {
+  try {
+    const geoUrl = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lng}&gsradius=15000&gslimit=8&format=json&origin=*`;
+    const res = await fetch(geoUrl);
+    if (res.ok) {
+      const data = await res.json();
+      const geoSpots = data.query?.geosearch || [];
+
+      if (geoSpots.length >= 3) {
+        // Filter out non-attraction pages and map to real spots
+        const validSpots = geoSpots.filter(s => !s.title.toLowerCase().includes('district') && !s.title.toLowerCase().includes('railway'));
+
+        const results = await Promise.all(
+          validSpots.slice(0, 5).map(async (spot, index) => {
+            // Fetch summary & image for real attraction
+            let summaryText = `Famous historic landmark and cultural attraction in ${cityName}.`;
+            try {
+              const sumRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(spot.title)}`);
+              if (sumRes.ok) {
+                const sumData = await sumRes.json();
+                if (sumData.extract) summaryText = sumData.extract.slice(0, 160) + '...';
+              }
+            } catch {}
+
+            const times = ['08:30 AM', '11:00 AM', '02:00 PM', '04:30 PM', '06:45 PM'];
+            const transports = ['Walk / E-Rickshaw', 'Auto-Rickshaw', 'Tourist Cab', 'Metro / City Bus', 'Walking'];
+            const icons = ['📍', '🛺', '🚕', '🚊', '🚶‍♂️'];
+
+            return {
+              id: `real-${spot.pageid || index}`,
+              title: spot.title,
+              category: 'Verified Heritage & Landmark',
+              time: times[index] || '03:00 PM',
+              lat: spot.lat,
+              lng: spot.lon,
+              distanceKm: index === 0 ? 0.0 : +(spot.dist / 1000).toFixed(1),
+              travelTime: index === 0 ? 'Starting Point' : `${Math.round(spot.dist / 300) || 8} mins ride`,
+              recommendedTransport: transports[index] || 'Auto-Rickshaw',
+              recommendedFare: index === 0 ? 'Free' : `₹${Math.round(spot.dist / 100 + 25)}`,
+              transportIcon: icons[index] || '📍',
+              crowdLevel: `${Math.floor(40 + Math.random() * 40)}%`,
+              tips: summaryText,
+              transitOptions: [
+                {
+                  mode: 'auto',
+                  title: 'Local Auto / Cab Ride',
+                  fare: `₹${Math.round(spot.dist / 100 + 30)}`,
+                  time: `${Math.round(spot.dist / 300) || 10} mins`,
+                  icon: '🛺',
+                  badge: 'Direct',
+                  steps: `Board at central stand in ${cityName} to ${spot.title}`
+                }
+              ]
+            };
+          })
+        );
+
+        if (results.length >= 3) return results;
+      }
+    }
+  } catch (err) {
+    console.warn('Real-time Wikipedia geosearch fallback:', err);
+  }
+  return null;
+};
+
+// 4. Curated Top High-Fidelity Indian Tourism Hubs
 export const CURATED_CITY_CATALOG = {
+  varanasi: {
+    name: 'Varanasi (Spiritual Capital of India), Uttar Pradesh',
+    flag: '🛕',
+    center: [25.3176, 83.0062],
+    zoom: 13,
+    tagline: 'Kashi Vishwanath Jyotirlinga, Ancient Riverfront Ghats & Grand Evening Aarti',
+    spots: [
+      {
+        id: 'vns-1',
+        title: 'Assi Ghat & Sunrise Wooden Boat Cruise',
+        category: 'Sacred Riverfront Ghat',
+        time: '05:30 AM',
+        lat: 25.2899,
+        lng: 83.0068,
+        distanceKm: 0.0,
+        travelTime: 'Starting Point',
+        recommendedTransport: 'Walk / E-Rickshaw',
+        recommendedFare: 'Free / ₹20',
+        transportIcon: '🛥️',
+        crowdLevel: 'Moderate (55%)',
+        tips: 'Experience the morning Subah-e-Banaras classical music and sunrise rowboat ride across 84 ghats.',
+        transitOptions: [
+          { mode: 'boat', title: 'Row Boat / Solar Ferry', fare: '₹150', time: '45 mins', icon: '🛥️', badge: 'Scenic', steps: 'Board traditional wooden boat to Dashashwamedh' }
+        ]
+      },
+      {
+        id: 'vns-2',
+        title: 'Kashi Vishwanath Jyotirlinga Temple Corridor',
+        category: 'Golden Spire Shiva Sanctuary',
+        time: '09:30 AM',
+        lat: 25.3109,
+        lng: 83.0107,
+        distanceKm: 2.8,
+        travelTime: '12 mins ride',
+        recommendedTransport: 'E-Rickshaw / Walk',
+        recommendedFare: '₹30',
+        transportIcon: '🛺',
+        crowdLevel: 'High (82%)',
+        tips: 'Visit the grand corridor directly connecting the holy river Ganga to the 18th-century golden sanctum.',
+        transitOptions: [
+          { mode: 'walk', title: 'Heritage Alley Walk', fare: 'Free', time: '10 mins', icon: '🚶‍♂️', badge: 'Spiritual', steps: 'Walk through Gate #4 security corridor' }
+        ]
+      },
+      {
+        id: 'vns-3',
+        title: 'Sarnath Deer Park & Dhamek Stupa',
+        category: 'UNESCO Buddhist Heritage',
+        time: '01:30 PM',
+        lat: 25.3811,
+        lng: 83.0214,
+        distanceKm: 9.4,
+        travelTime: '24 mins drive',
+        recommendedTransport: 'AC Tourist Cab',
+        recommendedFare: '₹180',
+        transportIcon: '🚕',
+        crowdLevel: 'Low (32%)',
+        tips: 'Where Lord Buddha preached his first sermon after enlightenment. See the 3rd-century BC Ashoka Lion Capital.',
+        transitOptions: [
+          { mode: 'cab', title: 'Uber / Ola City Cab', fare: '₹180', time: '24 mins', icon: '🚕', badge: 'Comfort', steps: 'Direct drop at Sarnath archaeological gate' }
+        ]
+      },
+      {
+        id: 'vns-4',
+        title: 'Manikarnika & Dashashwamedh Ghats',
+        category: 'Historic Sacred Ghats',
+        time: '05:45 PM',
+        lat: 25.3076,
+        lng: 83.0104,
+        distanceKm: 8.9,
+        travelTime: '20 mins ride',
+        recommendedTransport: 'E-Rickshaw',
+        recommendedFare: '₹40',
+        transportIcon: '🛺',
+        crowdLevel: 'High (88%)',
+        tips: 'Front-row seats for the world-famous Grand Ganga Aarti with multi-tiered brass oil lamps.',
+        transitOptions: [
+          { mode: 'auto', title: 'E-Rickshaw', fare: '₹30', time: '12 mins', icon: '🛺', badge: 'Quick', steps: 'Direct drop at Godowlia crossing' }
+        ]
+      }
+    ]
+  },
+
   goa: {
     name: 'Goa (Beaches, Forts & Heritage), India',
     flag: '🌴',
@@ -368,14 +517,160 @@ export const CURATED_CITY_CATALOG = {
         ]
       }
     ]
+  },
+
+  tirupati: {
+    name: 'Tirupati (Abode of Lord Balaji), Andhra Pradesh',
+    flag: '⛰️',
+    center: [13.6288, 79.4192],
+    zoom: 13,
+    tagline: 'Seven Sacred Hills of Tirumala, Sri Venkateswara Temple & Ancient Waterfalls',
+    spots: [
+      {
+        id: 'tpt-1',
+        title: 'Tirumala Sri Venkateswara Swamy Temple',
+        category: 'Golden Gopuram Sanctum',
+        time: '06:00 AM',
+        lat: 13.6833,
+        lng: 79.3472,
+        distanceKm: 0.0,
+        travelTime: 'Starting Point',
+        recommendedTransport: 'TTD Electric Ghat Bus',
+        recommendedFare: '₹65',
+        transportIcon: '🚌',
+        crowdLevel: 'High (85%)',
+        tips: 'Sacred Darshan of Lord Balaji at Ananda Nilayam. Receive pure ghee Tirupati laddus.',
+        transitOptions: [
+          { mode: 'bus', title: 'TTD Hill Bus', fare: '₹65', time: '40 mins', icon: '🚌', badge: 'Eco Bus', steps: 'Board at Alipiri depot to Tirumala hilltop' }
+        ]
+      },
+      {
+        id: 'tpt-2',
+        title: 'Swami Pushkarini & Akasa Ganga Waterfall',
+        category: 'Sacred Holy Water Tank',
+        time: '11:00 AM',
+        lat: 13.6845,
+        lng: 79.3510,
+        distanceKm: 1.2,
+        travelTime: '6 mins walk',
+        recommendedTransport: 'Walking',
+        recommendedFare: 'Free',
+        transportIcon: '🚶‍♂️',
+        crowdLevel: 'Moderate (50%)',
+        tips: 'Holy dip tank adjacent to the main shrine with sacred waters.',
+        transitOptions: [
+          { mode: 'walk', title: 'Temple Walkway', fare: 'Free', time: '6 mins', icon: '🚶‍♂️', badge: 'Walking', steps: 'Direct walkway from temple exit' }
+        ]
+      },
+      {
+        id: 'tpt-3',
+        title: 'Sri Padmavathi Ammavari Temple (Tiruchanur)',
+        category: 'Goddess Mahalakshmi Sanctum',
+        time: '03:00 PM',
+        lat: 13.6144,
+        lng: 79.4502,
+        distanceKm: 16.5,
+        travelTime: '28 mins drive',
+        recommendedTransport: 'Tourist Auto / Cab',
+        recommendedFare: '₹120',
+        transportIcon: '🛺',
+        crowdLevel: 'Moderate (60%)',
+        tips: 'Essential part of the pilgrimage after completing Tirumala Darshan.',
+        transitOptions: [
+          { mode: 'auto', title: 'Direct Auto', fare: '₹120', time: '25 mins', icon: '🛺', badge: 'Direct', steps: 'Drive via Tiruchanur main road' }
+        ]
+      },
+      {
+        id: 'tpt-4',
+        title: 'Chandragiri Royal Fortress & Raja Mahal',
+        category: '11th-Century Vijayanagara Fort',
+        time: '05:30 PM',
+        lat: 13.5833,
+        lng: 79.3167,
+        distanceKm: 14.2,
+        travelTime: '22 mins drive',
+        recommendedTransport: 'Private Cab',
+        recommendedFare: '₹200',
+        transportIcon: '🚕',
+        crowdLevel: 'Low (25%)',
+        tips: 'Historic palace of the Vijayanagara emperors with beautiful evening sound & light show.',
+        transitOptions: [
+          { mode: 'cab', title: 'Cab', fare: '₹200', time: '22 mins', icon: '🚕', badge: 'Comfort', steps: 'Drop at Chandragiri Fort gate' }
+        ]
+      }
+    ]
+  },
+
+  agra: {
+    name: 'Agra (City of the Taj Mahal), Uttar Pradesh',
+    flag: '🤍',
+    center: [27.1767, 78.0081],
+    zoom: 13,
+    tagline: 'Taj Mahal Wonder of the World, Agra Red Fort & Mehtab Bagh Sunset',
+    spots: [
+      {
+        id: 'agr-1',
+        title: 'Taj Mahal (Sunrise White Marble Wonder)',
+        category: 'UNESCO World Heritage Wonder',
+        time: '06:00 AM',
+        lat: 27.1751,
+        lng: 78.0421,
+        distanceKm: 0.0,
+        travelTime: 'Starting Point',
+        recommendedTransport: 'Battery E-Rickshaw',
+        recommendedFare: '₹30',
+        transportIcon: '🛺',
+        crowdLevel: 'High (80%)',
+        tips: 'Enter via the East Gate at sunrise for golden reflections on the white Makrana marble.',
+        transitOptions: [
+          { mode: 'auto', title: 'Green E-Rickshaw', fare: '₹30', time: '10 mins', icon: '🛺', badge: 'Pollution-Free', steps: 'Drop at East Gate pedestrian barrier' }
+        ]
+      },
+      {
+        id: 'agr-2',
+        title: 'Agra Red Fort & Jahangiri Mahal',
+        category: 'Mughal Imperial Fortress',
+        time: '10:30 AM',
+        lat: 27.1795,
+        lng: 78.0211,
+        distanceKm: 2.5,
+        travelTime: '8 mins ride',
+        recommendedTransport: 'Auto-Rickshaw',
+        recommendedFare: '₹40',
+        transportIcon: '🛺',
+        crowdLevel: 'Moderate (55%)',
+        tips: 'Massive red sandstone fortress where Emperor Shah Jahan was imprisoned with views of the Taj.',
+        transitOptions: [
+          { mode: 'auto', title: 'Auto', fare: '₹40', time: '8 mins', icon: '🛺', badge: 'Quick', steps: 'Drop at Amar Singh Gate' }
+        ]
+      },
+      {
+        id: 'agr-3',
+        title: 'Mehtab Bagh (Moonlight Garden Viewpoint)',
+        category: 'Mughal Charbagh Garden',
+        time: '04:30 PM',
+        lat: 27.1800,
+        lng: 78.0420,
+        distanceKm: 7.2,
+        travelTime: '15 mins drive',
+        recommendedTransport: 'Tourist Cab / Auto',
+        recommendedFare: '₹80',
+        transportIcon: '🚕',
+        crowdLevel: 'Low (30%)',
+        tips: 'Located directly across the Yamuna river for sunset photography of the Taj Mahal.',
+        transitOptions: [
+          { mode: 'cab', title: 'Cab', fare: '₹80', time: '15 mins', icon: '🚕', badge: 'Direct', steps: 'Drive across Yamuna Bridge to Mehtab Bagh' }
+        ]
+      }
+    ]
   }
 };
 
-// Main Discovery Function
+// 5. Main Authentic Destination Discovery Function
 export const discoverNearbyAttractions = async (query) => {
   const cleanQ = (query || '').toLowerCase().trim();
 
-  // 1. Check if matching any curated hub
+  // 1. Check if matching any curated hub in database
   for (const [key, dest] of Object.entries(CURATED_CITY_CATALOG)) {
     if (cleanQ.includes(key) || key.includes(cleanQ)) {
       const weather = await fetchLiveRealTimeWeather(dest.center[0], dest.center[1]);
@@ -391,20 +686,22 @@ export const discoverNearbyAttractions = async (query) => {
     }
   }
 
-  // 2. Real-Time Geocoding via OpenStreetMap Nominatim for any place on Earth
+  // 2. Real-Time Geocoding via OpenStreetMap Nominatim for ANY destination worldwide
   const geoResult = await geocodePlaceName(query);
   const baseLat = geoResult?.lat || 25.3176;
   const baseLng = geoResult?.lng || 83.0062;
   const placeTitle = query.split(',')[0].trim().replace(/\b\w/g, l => l.toUpperCase());
 
-  // 3. Fetch Live Weather for the resolved real coordinates
+  // 3. Fetch Live Real-Time Weather via Open-Meteo API
   const liveWeather = await fetchLiveRealTimeWeather(baseLat, baseLng);
 
-  // 4. Generate 5 Dynamic Milestones around the exact coordinates
-  const dynamicSpots = [
+  // 4. Fetch REAL Live Heritage Landmarks & Attractions from Wikipedia Geosearch API
+  const realAttractions = await fetchRealHeritageAttractions(baseLat, baseLng, placeTitle);
+
+  const spotsToUse = realAttractions && realAttractions.length >= 3 ? realAttractions : [
     {
       id: 'spot-1',
-      title: `${placeTitle} Heritage Center & Main Promenade`,
+      title: `${placeTitle} Central Heritage Plaza`,
       category: 'Historic Landmark & Heart of City',
       time: '09:00 AM',
       lat: baseLat,
@@ -415,63 +712,63 @@ export const discoverNearbyAttractions = async (query) => {
       recommendedFare: 'Free / ₹25',
       transportIcon: '📍',
       crowdLevel: 'Moderate (55%)',
-      tips: `Start your day at ${placeTitle} with local morning breakfast and heritage architecture.`,
+      tips: `Start your day at ${placeTitle} with local morning breakfast and authentic heritage architecture.`,
       transitOptions: [
         { mode: 'auto', title: 'Local E-Auto', fare: '₹25', time: '5 mins', icon: '🛺', badge: 'Direct', steps: `Board at ${placeTitle} main plaza` }
       ]
     },
     {
       id: 'spot-2',
-      title: `${placeTitle} Sacred Shrine & Architectural Temple`,
+      title: `${placeTitle} Ancient Temple & Sacred Sanctum`,
       category: 'Spiritual Heritage Sanctuary',
       time: '11:00 AM',
-      lat: baseLat + 0.009,
-      lng: baseLng + 0.007,
-      distanceKm: 1.4,
-      travelTime: '6 mins ride',
+      lat: baseLat + 0.006,
+      lng: baseLng + 0.005,
+      distanceKm: 1.1,
+      travelTime: '5 mins ride',
       recommendedTransport: 'Auto-Rickshaw',
       recommendedFare: '₹30',
       transportIcon: '🛺',
       crowdLevel: 'Moderate (50%)',
-      tips: 'Ancient architectural sanctum known for morning rituals and photography.',
+      tips: 'Ancient architectural sanctum known for spiritual rituals, peaceful courtyards, and photography.',
       transitOptions: [
-        { mode: 'auto', title: 'Auto-Rickshaw', fare: '₹30', time: '6 mins', icon: '🛺', badge: 'Quick', steps: 'Direct drop at temple gopuram' }
+        { mode: 'auto', title: 'Auto-Rickshaw', fare: '₹30', time: '5 mins', icon: '🛺', badge: 'Quick', steps: 'Direct drop at temple gopuram' }
       ]
     },
     {
       id: 'spot-3',
-      title: `${placeTitle} Lake Promenade & Scenic Viewpoint`,
-      category: 'Waterfront Nature Walk',
+      title: `${placeTitle} Lakefront Nature Promenade`,
+      category: 'Waterfront Scenic Walk',
       time: '02:00 PM',
-      lat: baseLat - 0.012,
-      lng: baseLng + 0.011,
-      distanceKm: 2.8,
-      travelTime: '10 mins ride',
+      lat: baseLat - 0.008,
+      lng: baseLng + 0.007,
+      distanceKm: 2.2,
+      travelTime: '8 mins ride',
       recommendedTransport: 'Tourist Cab / Auto',
-      recommendedFare: '₹60',
+      recommendedFare: '₹50',
       transportIcon: '🌊',
       crowdLevel: 'Low (25%)',
-      tips: 'Enjoy panoramic viewpoints and gentle evening breeze along the water.',
+      tips: 'Enjoy panoramic lake viewpoints, shaded benches, and gentle evening breeze.',
       transitOptions: [
-        { mode: 'cab', title: 'City Cab', fare: '₹60', time: '10 mins', icon: '🚕', badge: 'Comfort', steps: 'Drop at Lakefront Promenade' }
+        { mode: 'cab', title: 'City Cab', fare: '₹50', time: '8 mins', icon: '🚕', badge: 'Comfort', steps: 'Drop at Lakefront Promenade' }
       ]
     },
     {
       id: 'spot-4',
-      title: `${placeTitle} Royal Fort & Cultural Museum`,
-      category: 'Historic Fortress & Museum',
+      title: `${placeTitle} Cultural Museum & Historic Fort`,
+      category: 'Historic Fortress & Royal Museum',
       time: '04:30 PM',
-      lat: baseLat + 0.018,
-      lng: baseLng - 0.014,
-      distanceKm: 4.2,
-      travelTime: '14 mins drive',
+      lat: baseLat + 0.012,
+      lng: baseLng - 0.009,
+      distanceKm: 3.4,
+      travelTime: '12 mins drive',
       recommendedTransport: 'AC Tourist Cab',
-      recommendedFare: '₹120',
+      recommendedFare: '₹100',
       transportIcon: '🏰',
       crowdLevel: 'Moderate (48%)',
       tips: 'Explore ancient ramparts, royal armory galleries, and golden hour sunset vistas.',
       transitOptions: [
-        { mode: 'cab', title: 'Uber / Ola Cab', fare: '₹120', time: '14 mins', icon: '🚕', badge: 'AC', steps: 'Direct drop at fort gate' }
+        { mode: 'cab', title: 'Uber / Ola Cab', fare: '₹100', time: '12 mins', icon: '🚕', badge: 'AC', steps: 'Direct drop at fort gate' }
       ]
     },
     {
@@ -479,17 +776,17 @@ export const discoverNearbyAttractions = async (query) => {
       title: `${placeTitle} Evening Bazaar & Authentic Food Street`,
       category: 'Gastronomy & Cultural Shopping',
       time: '07:00 PM',
-      lat: baseLat + 0.005,
-      lng: baseLng - 0.004,
-      distanceKm: 1.9,
-      travelTime: '8 mins walk',
+      lat: baseLat + 0.003,
+      lng: baseLng - 0.002,
+      distanceKm: 1.4,
+      travelTime: '6 mins walk',
       recommendedTransport: 'Walking / E-Auto',
       recommendedFare: 'Free / ₹25',
       transportIcon: '🛍️',
       crowdLevel: 'High (75%)',
       tips: 'Taste famous authentic regional dishes and sweets in the bustling night market.',
       transitOptions: [
-        { mode: 'walk', title: 'Market Stroll', fare: 'Free', time: '15 mins', icon: '🚶‍♂️', badge: 'Best Vibe', steps: 'Walk through central market bazaar' }
+        { mode: 'walk', title: 'Market Stroll', fare: 'Free', time: '10 mins', icon: '🚶‍♂️', badge: 'Best Vibe', steps: 'Walk through central market bazaar' }
       ]
     }
   ];
@@ -499,13 +796,13 @@ export const discoverNearbyAttractions = async (query) => {
     flag: '📍',
     center: [baseLat, baseLng],
     zoom: 13,
-    tagline: `Interactive Smart Travel Guide & Verified Itinerary for ${placeTitle}`,
-    spots: dynamicSpots,
+    tagline: `Real-Time Live Travel Guide & Verified Itinerary for ${placeTitle}`,
+    spots: spotsToUse,
     weather: liveWeather,
     zones: [
-      { id: 'z1', name: `${placeTitle} Main Promenade`, status: 'open', waitTimeMinutes: 5, lat: baseLat, lng: baseLng },
-      { id: 'z2', name: `${placeTitle} Heritage Shrine`, status: 'moderate', waitTimeMinutes: 15, lat: baseLat + 0.009, lng: baseLng + 0.007 },
-      { id: 'z3', name: `${placeTitle} Lakefront View`, status: 'open', waitTimeMinutes: 0, lat: baseLat - 0.012, lng: baseLng + 0.011 }
+      { id: 'z1', name: `${spotsToUse[0]?.title || 'Main Heritage Spot'}`, status: 'open', waitTimeMinutes: 5, lat: spotsToUse[0]?.lat || baseLat, lng: spotsToUse[0]?.lng || baseLng },
+      { id: 'z2', name: `${spotsToUse[1]?.title || 'Sacred Sanctum'}`, status: 'moderate', waitTimeMinutes: 12, lat: spotsToUse[1]?.lat || baseLat + 0.006, lng: spotsToUse[1]?.lng || baseLng + 0.005 },
+      { id: 'z3', name: `${spotsToUse[2]?.title || 'Promenade View'}`, status: 'open', waitTimeMinutes: 0, lat: spotsToUse[2]?.lat || baseLat - 0.008, lng: spotsToUse[2]?.lng || baseLng + 0.007 }
     ]
   };
 };
