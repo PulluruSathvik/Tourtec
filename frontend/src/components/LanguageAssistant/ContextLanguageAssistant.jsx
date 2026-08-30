@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { generateIntelligentChatReply } from '../../services/aiChatbotService';
-import { processCameraImageGoogleLens } from '../../services/cameraTranslationService';
+import {
+  processCameraImageGoogleLens,
+  translatePlainText,
+  SUPPORTED_TRANSLATION_LANGUAGES,
+  getLanguageName
+} from '../../services/cameraTranslationService';
 import {
   MessageSquare,
   Volume2,
@@ -32,7 +37,9 @@ import {
   Compass,
   ArrowRight,
   CheckCircle2,
-  Coins
+  Coins,
+  ArrowLeftRight,
+  FileText
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -44,20 +51,32 @@ export const ContextLanguageAssistant = () => {
     setActiveTab
   } = useApp();
 
+  // Translation Language Pair States
+  const [sourceLanguage, setSourceLanguage] = useState('auto');
   const [targetLanguage, setTargetLanguage] = useState('en');
+
+  // Chatbot State
   const [inputQuery, setInputQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [currentlyPlayingAudioIndex, setCurrentlyPlayingAudioIndex] = useState(null);
 
+  // Translation Card Mode: 'camera' vs 'text'
+  const [translatorMode, setTranslatorMode] = useState('camera');
+
+  // Text Translator State
+  const [typedText, setTypedText] = useState('');
+  const [translatedTextOutput, setTranslatedTextOutput] = useState('');
+  const [isTranslatingTypedText, setIsTranslatingTypedText] = useState(false);
+
   // 📷 Live Camera & OCR State
   const [isLiveCameraActive, setIsLiveCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const [isProcessingOcr, setIsProcessingOcr] = useState(false);
+  const [ocrScanProgress, setOcrScanProgress] = useState(0);
   const [ocrResult, setOcrResult] = useState(null);
-  const [activeSignIndex, setActiveSignIndex] = useState(0);
 
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -71,8 +90,8 @@ export const ContextLanguageAssistant = () => {
     {
       id: 'msg-1',
       sender: 'bot',
-      category: 'Incredible India AI Travel Assistant',
-      text: `Namaste & Welcome to ${cityName}! I am your AI Travel Planner & Guide.
+      category: '⚡ Powered by Gemini 3.7 Flash',
+      text: `Namaste & Welcome to ${cityName}! I am your AI Travel Planner & Guide powered by Gemini 3.7 Flash.
 
 💡 Try typing:
 • "I want to visit Goa"
@@ -95,31 +114,6 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
     { label: '🤍 Plan Agra (Taj Mahal + Budget)', query: 'Plan a trip to Agra and Taj Mahal with budget' },
     { label: '🛕 Temple Dress Codes', query: `What is the dress code and rules for temples in ${cityName}?` },
     { label: '🍛 Iconic Local Food', query: `What is the most famous authentic food in ${cityName}?` }
-  ];
-
-  // Signboards Catalog for Preset Instant Demo
-  const sampleSigns = [
-    {
-      title: '🛕 Temple Entry Rules (Hindi)',
-      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-      nativeText: 'श्री मंदिर गर्भगृह प्रवेश नियमावली: जूते-चप्पल बाहर जूता घर में जमा करें। चमड़े की वस्तुएं एवं मोबाइल फोन वर्जित हैं।',
-      englishTranslation: 'Temple Inner Sanctum Rules: Please deposit footwear at the free shoe stand outside. Leather items and mobile phones are strictly prohibited inside.',
-      culturalInsight: 'Traditional temple sanctity requires pure cotton attire and footwear removal before darshan.'
-    },
-    {
-      title: '🍛 Heritage Restaurant Menu (Hindi)',
-      image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=800&auto=format&fit=crop',
-      nativeText: 'शुद्ध देशी घी कचौड़ी-जलेबी, मलाई लस्सी कुल्हड़ में, और बनारसी मीठा पान।',
-      englishTranslation: 'Pure Desi Ghee Kachori with Jalebi, Thick Malai Lassi served in traditional earthen Kulhad cup, and Authentic Sweet Paan.',
-      culturalInsight: 'Local morning breakfast staple served hot directly from the kadhai.'
-    },
-    {
-      title: '🛥️ Solar Ferry & Jetty Notice (Hindi)',
-      image: 'https://images.unsplash.com/photo-1561361058-c24cecae35ca?q=80&w=800&auto=format&fit=crop',
-      nativeText: 'पर्यटन सौर नौका सेवा: शाम की महा आरती हेतु टिकट काउंटर नंबर २ पर उपलब्ध है। लाइफ जैकेट अनिवार्य है।',
-      englishTranslation: 'Tourism Solar Boat Service: Evening Grand Aarti tickets available at Counter #2. Wearing life jackets is mandatory during the river cruise.',
-      culturalInsight: 'Eco-friendly solar boats produce zero noise and zero river pollution.'
-    }
   ];
 
   // Essential Multilingual Phrasebook
@@ -145,6 +139,18 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
     };
   }, []);
 
+  // ⇄ Swap Source and Target Languages
+  const handleSwapLanguages = () => {
+    if (sourceLanguage === 'auto') {
+      setSourceLanguage(targetLanguage);
+      setTargetLanguage('hi');
+    } else {
+      const temp = sourceLanguage;
+      setSourceLanguage(targetLanguage);
+      setTargetLanguage(temp);
+    }
+  };
+
   // 🤖 SUBMIT QUERY TO AI CHATBOT ENGINE
   const handleSendQuery = async (queryText = null) => {
     const textToSend = queryText || inputQuery;
@@ -162,13 +168,12 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
     setIsLoading(true);
 
     try {
-      // 1. Generate Intelligent AI Response with Complete Plan & Budget
       const replyData = await generateIntelligentChatReply(textToSend, cityName, userLocation.landmark || cityName, targetLanguage);
 
       const botMsg = {
         id: `bot-${Date.now()}`,
         sender: 'bot',
-        category: replyData.category || 'Incredible India AI Guide',
+        category: replyData.category || '⚡ Gemini 3.7 Flash',
         isTravelPlan: replyData.isTravelPlan || false,
         destinationName: replyData.destinationName || null,
         text: replyData.reply,
@@ -249,7 +254,7 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
     processPhotoOcr(dataUrl);
   };
 
-  // 📁 HANDLE MOBILE PHOTO FILE UPLOAD OR NATIVE CAMERA CAPTURE
+  // 📁 HANDLE MOBILE PHOTO FILE UPLOAD
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -263,16 +268,14 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
     reader.readAsDataURL(file);
   };
 
-  const [ocrScanProgress, setOcrScanProgress] = useState(0);
-
-  // ⚡ PROCESS REAL GOOGLE LENS OCR & TRANSLATION PIPELINE
+  // ⚡ PROCESS REAL GOOGLE LENS OCR & TRANSLATION WITH SELECTED LANGUAGE PAIR
   const processPhotoOcr = async (imageUrl) => {
     setIsProcessingOcr(true);
     setOcrResult(null);
     setOcrScanProgress(15);
 
     try {
-      const result = await processCameraImageGoogleLens(imageUrl, targetLanguage, (progress) => {
+      const result = await processCameraImageGoogleLens(imageUrl, sourceLanguage, targetLanguage, (progress) => {
         setOcrScanProgress(progress);
       });
 
@@ -285,6 +288,26 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
     } finally {
       setIsProcessingOcr(false);
       setOcrScanProgress(0);
+    }
+  };
+
+  // ✍️ TRANSLATE TYPED TEXT BETWEEN SELECTED LANGUAGES
+  const handleTranslateTypedText = async (e) => {
+    if (e) e.preventDefault();
+    if (!typedText.trim()) return;
+
+    setIsTranslatingTypedText(true);
+    setTranslatedTextOutput('');
+
+    try {
+      const result = await translatePlainText(typedText, sourceLanguage, targetLanguage);
+      setTranslatedTextOutput(result || typedText);
+      confetti({ particleCount: 30, spread: 50 });
+    } catch (err) {
+      console.warn('Text translation error:', err);
+      setTranslatedTextOutput(typedText);
+    } finally {
+      setIsTranslatingTypedText(false);
     }
   };
 
@@ -306,6 +329,9 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
       if (targetLanguage === 'hi') utterance.lang = 'hi-IN';
       else if (targetLanguage === 'te') utterance.lang = 'te-IN';
       else if (targetLanguage === 'ta') utterance.lang = 'ta-IN';
+      else if (targetLanguage === 'kn') utterance.lang = 'kn-IN';
+      else if (targetLanguage === 'bn') utterance.lang = 'bn-IN';
+      else if (targetLanguage === 'mr') utterance.lang = 'mr-IN';
       else utterance.lang = 'en-IN';
 
       utterance.onstart = () => {
@@ -379,17 +405,17 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black mb-2">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>AI Travel Itinerary, Budget & Voice Guide</span>
+            <span>AI Travel Itinerary, Budget & Multilingual Translator</span>
           </div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            AI Travel Itinerary Planner & Guide
+            AI Travel Itinerary Planner & Multi-Language Guide
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            Ask for complete travel plans, itemized budgets, hotel areas, food spots, or use camera scanning for any destination in India!
+            Ask for complete travel plans, itemized budgets, or translate camera signboards & text between any language!
           </p>
         </div>
 
-        {/* Target Language Selector */}
+        {/* Global Assistant Language */}
         <div className="flex items-center gap-2 bg-slate-50 p-1.5 border border-slate-200 rounded-2xl">
           <Globe2 className="w-4 h-4 text-slate-500 ml-2" />
           <select
@@ -397,13 +423,9 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
             onChange={(e) => setTargetLanguage(e.target.value)}
             className="bg-transparent font-bold text-xs text-slate-900 focus:outline-none pr-3 py-1 cursor-pointer"
           >
-            <option value="en">English (India)</option>
-            <option value="hi">हिंदी (Hindi)</option>
-            <option value="te">తెలుగు (Telugu)</option>
-            <option value="ta">தமிழ் (Tamil)</option>
-            <option value="kn">ಕನ್ನಡ (Kannada)</option>
-            <option value="bn">বাংলা (Bengali)</option>
-            <option value="mr">मराठी (Marathi)</option>
+            {SUPPORTED_TRANSLATION_LANGUAGES.filter(l => l.code !== 'auto').map(l => (
+              <option key={l.code} value={l.code}>{l.name}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -411,8 +433,8 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
       {/* MAIN TWO-COLUMN WORKSPACE */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* LEFT 7 COLS: INTERACTIVE AI CHATBOT */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[680px]">
+        {/* LEFT 7 COLS: INTERACTIVE AI CHATBOT (GEMINI 3.7 FLASH) */}
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[720px]">
           
           {/* Chat Header with Gemini 3.7 Flash Badge */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
@@ -574,7 +596,7 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
             {isLoading && (
               <div className="flex items-center gap-2 text-slate-500 text-xs pl-2">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                <span className="font-bold">Generating complete itinerary & budget blueprint...</span>
+                <span className="font-bold">Gemini 3.7 Flash generating complete itinerary & budget...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -603,7 +625,7 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
               type="text"
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
-              placeholder={`Ask for any destination plan: "I want to visit Goa" or "Plan a trip to Jaipur"...`}
+              placeholder={`Ask for any destination: "I want to visit Goa" or "Plan a trip to Jaipur"...`}
               className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500"
             />
 
@@ -618,188 +640,326 @@ I will provide a complete day-by-day itinerary, itemized budget in INR, best hot
 
         </div>
 
-        {/* RIGHT 5 COLS: 📷 LIVE CAMERA & SIGNBOARD OCR SCANNER + PHRASEBOOK */}
+        {/* RIGHT 5 COLS: 🌐 MULTI-LANGUAGE TRANSLATION SUITE (CAMERA OCR + TEXT) */}
         <div className="lg:col-span-5 space-y-6">
 
-          {/* 📷 CAMERA SCANNER CARD */}
+          {/* TRANSLATOR CONTAINER */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm space-y-4">
+            
+            {/* Header & Mode Switcher */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-blue-600" />
-                <h4 className="text-sm font-black text-slate-900">Live Camera & Signboard Translator</h4>
+                <Globe2 className="w-4 h-4 text-blue-600" />
+                <h4 className="text-sm font-black text-slate-900">Multi-Language Translator</h4>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-800 rounded-full">
-                OCR + AI
-              </span>
-            </div>
-
-            {/* Viewfinder / Preview Area */}
-            <div className="relative rounded-2xl overflow-hidden bg-slate-950 min-h-[200px] flex items-center justify-center border border-slate-200">
               
-              {/* 1. Live Camera Feed */}
-              {isLiveCameraActive && (
-                <div className="relative w-full h-56">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-4 border-2 border-amber-400/70 rounded-xl pointer-events-none animate-pulse"></div>
-                  <div className="absolute top-2 left-2 px-2 py-0.5 bg-red-600 text-white text-[9px] font-black rounded-md flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
-                    <span>LIVE</span>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Captured Image Preview */}
-              {!isLiveCameraActive && capturedImage && (
-                <div className="relative w-full h-56">
-                  <img
-                    src={capturedImage}
-                    alt="Captured Signboard"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              {/* 3. Empty Initial State with Sample Sign */}
-              {!isLiveCameraActive && !capturedImage && (
-                <div className="p-4 text-center space-y-2 text-slate-400">
-                  <Scan className="w-8 h-8 mx-auto text-slate-500" />
-                  <p className="text-xs text-slate-300 font-medium">
-                    Point your mobile camera at ancient temple scripts, notices, or menus to translate instantly.
-                  </p>
-                </div>
-              )}
-
-              {/* Google Lens Laser Scanner Animation */}
-              {isProcessingOcr && (
-                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-3 p-4">
-                  <div className="relative w-full h-24 border border-cyan-400/40 rounded-xl overflow-hidden flex items-center justify-center">
-                    <div className="absolute w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse shadow-lg"></div>
-                    <Scan className="w-8 h-8 text-cyan-300 animate-spin" style={{ animationDuration: '4s' }} />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <span className="text-xs font-black text-cyan-300 block">Google Lens OCR Scanning... {ocrScanProgress > 0 ? `${ocrScanProgress}%` : ''}</span>
-                    <span className="text-[10px] text-slate-400">Detecting Indian script & translating...</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Camera Control Buttons */}
-            <div className="flex gap-2">
-              {!isLiveCameraActive ? (
+              <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200">
                 <button
-                  onClick={handleStartLiveCamera}
-                  className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                  onClick={() => setTranslatorMode('camera')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition cursor-pointer flex items-center gap-1 ${
+                    translatorMode === 'camera' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                  }`}
                 >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Start Live Camera</span>
+                  <Camera className="w-3 h-3" />
+                  <span>Camera Lens</span>
                 </button>
-              ) : (
-                <div className="flex gap-2 w-full">
-                  <button
-                    onClick={handleCaptureLivePhoto}
-                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                  >
-                    <Scan className="w-3.5 h-3.5" />
-                    <span>Snap & Translate</span>
-                  </button>
-                  <button
-                    onClick={handleStopLiveCamera}
-                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
-                  >
-                    <StopCircle className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Mobile Native Camera Upload */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
-                title="Take photo from mobile camera or gallery"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload</span>
-              </button>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+                <button
+                  onClick={() => setTranslatorMode('text')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition cursor-pointer flex items-center gap-1 ${
+                    translatorMode === 'text' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <FileText className="w-3 h-3" />
+                  <span>Text / Voice</span>
+                </button>
+              </div>
             </div>
 
-            {/* Real Google Lens OCR Translation Result Card */}
-            {ocrResult && (
-              <div className="p-4 bg-amber-50/90 border-2 border-amber-300 rounded-2xl space-y-3 animate-fadeIn text-xs shadow-sm">
-                <div className="flex items-center justify-between border-b border-amber-200/80 pb-2">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                    <span className="text-[10px] font-black uppercase text-amber-900">
-                      Detected: {ocrResult.detectedLang} ({ocrResult.confidence})
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
+            {/* 🌐 DEDICATED LANGUAGE PAIR SELECTOR WITH ⇄ SWAP BUTTON */}
+            <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-2 shadow-2xs">
+              {/* Translate From */}
+              <div className="flex-1">
+                <span className="text-[9px] uppercase font-black text-slate-400 block mb-0.5 tracking-wider">
+                  Translate From
+                </span>
+                <select
+                  value={sourceLanguage}
+                  onChange={(e) => setSourceLanguage(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-xs font-black rounded-xl px-2 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  {SUPPORTED_TRANSLATION_LANGUAGES.map(l => (
+                    <option key={l.code} value={l.code}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Swap Button */}
+              <div className="pt-3">
+                <button
+                  onClick={handleSwapLanguages}
+                  className="p-2 bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50 rounded-xl transition shadow-2xs text-slate-700 hover:text-blue-600 cursor-pointer"
+                  title="Swap languages"
+                >
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Translate To */}
+              <div className="flex-1">
+                <span className="text-[9px] uppercase font-black text-slate-400 block mb-0.5 tracking-wider">
+                  Translate To
+                </span>
+                <select
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-900 text-xs font-black rounded-xl px-2 py-1.5 focus:outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  {SUPPORTED_TRANSLATION_LANGUAGES.filter(l => l.code !== 'auto').map(l => (
+                    <option key={l.code} value={l.code}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* MODE 1: 📷 GOOGLE LENS CAMERA & OCR SCANNER */}
+            {translatorMode === 'camera' && (
+              <div className="space-y-4">
+                {/* Viewfinder / Preview Area */}
+                <div className="relative rounded-2xl overflow-hidden bg-slate-950 min-h-[190px] flex items-center justify-center border border-slate-200">
+                  
+                  {/* 1. Live Camera Feed */}
+                  {isLiveCameraActive && (
+                    <div className="relative w-full h-52">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-4 border-2 border-amber-400/70 rounded-xl pointer-events-none animate-pulse"></div>
+                      <div className="absolute top-2 left-2 px-2 py-0.5 bg-red-600 text-white text-[9px] font-black rounded-md flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                        <span>LIVE CAMERA</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. Captured Image Preview */}
+                  {!isLiveCameraActive && capturedImage && (
+                    <div className="relative w-full h-52">
+                      <img
+                        src={capturedImage}
+                        alt="Captured Signboard"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* 3. Empty Initial State */}
+                  {!isLiveCameraActive && !capturedImage && (
+                    <div className="p-4 text-center space-y-2 text-slate-400">
+                      <Scan className="w-8 h-8 mx-auto text-slate-500" />
+                      <p className="text-xs text-slate-300 font-medium">
+                        Point camera or upload a photo of temple signs, notices, or menus to translate into <strong>{getLanguageName(targetLanguage)}</strong>.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Google Lens Laser Scanner Animation */}
+                  {isProcessingOcr && (
+                    <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-3 p-4">
+                      <div className="relative w-full h-24 border border-cyan-400/40 rounded-xl overflow-hidden flex items-center justify-center">
+                        <div className="absolute w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse shadow-lg"></div>
+                        <Scan className="w-8 h-8 text-cyan-300 animate-spin" style={{ animationDuration: '4s' }} />
+                      </div>
+                      <div className="text-center space-y-1">
+                        <span className="text-xs font-black text-cyan-300 block">Google Lens OCR Scanning... {ocrScanProgress > 0 ? `${ocrScanProgress}%` : ''}</span>
+                        <span className="text-[10px] text-slate-400">Translating to {getLanguageName(targetLanguage)}...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Camera Control Buttons */}
+                <div className="flex gap-2">
+                  {!isLiveCameraActive ? (
                     <button
-                      onClick={() => handlePlayVoice(ocrResult.translatedText)}
-                      className="px-2 py-0.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold flex items-center gap-1 text-[10px] cursor-pointer"
+                      onClick={handleStartLiveCamera}
+                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
                     >
-                      <Volume2 className="w-3 h-3" />
-                      <span>Audio</span>
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>Start Live Camera</span>
                     </button>
+                  ) : (
+                    <div className="flex gap-2 w-full">
+                      <button
+                        onClick={handleCaptureLivePhoto}
+                        className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <Scan className="w-3.5 h-3.5" />
+                        <span>Snap & Translate</span>
+                      </button>
+                      <button
+                        onClick={handleStopLiveCamera}
+                        className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        <StopCircle className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Mobile Native Camera Upload */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="py-2.5 px-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                    title="Take photo from mobile camera or gallery"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload</span>
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Real Google Lens OCR Translation Result Card */}
+                {ocrResult && (
+                  <div className="p-4 bg-amber-50/90 border-2 border-amber-300 rounded-2xl space-y-3 animate-fadeIn text-xs shadow-sm">
+                    <div className="flex items-center justify-between border-b border-amber-200/80 pb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                        <span className="text-[10px] font-black uppercase text-amber-900">
+                          {ocrResult.detectedLang} ➔ {getLanguageName(targetLanguage)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handlePlayVoice(ocrResult.translatedText)}
+                          className="px-2 py-0.5 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-900 font-bold flex items-center gap-1 text-[10px] cursor-pointer"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          <span>Audio</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(ocrResult.translatedText);
+                            alert('Copied translation to clipboard!');
+                          }}
+                          className="px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-900 font-bold flex items-center gap-1 text-[10px] cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Detected Original Inscription */}
+                    <div className="p-2.5 bg-white rounded-xl border border-amber-200/60 font-serif italic text-slate-800 text-xs">
+                      <span className="text-[9px] uppercase font-sans font-bold text-slate-400 block not-italic">Original Inscription in Photo:</span>
+                      "{ocrResult.detectedText}"
+                    </div>
+
+                    {/* Translated Output */}
+                    <div>
+                      <strong className="text-slate-900 block font-black text-xs">Translation ({getLanguageName(targetLanguage)}):</strong>
+                      <p className="text-slate-900 font-bold text-xs mt-0.5 leading-relaxed">{ocrResult.translatedText}</p>
+                    </div>
+
+                    {/* Cultural Tourist Insight */}
+                    <div className="text-[11px] text-amber-950 bg-amber-100/70 p-2.5 rounded-xl border border-amber-300/60">
+                      💡 <strong>Cultural Tourist Advice:</strong> {ocrResult.culturalContext}
+                    </div>
+
+                    {/* Forward to Chatbot Button */}
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(ocrResult.translatedText);
-                        alert('Copied translation to clipboard!');
+                        handleSendQuery(`Tell me more about this rule/signboard: "${ocrResult.translatedText}" in ${cityName}`);
+                        const chatEl = document.querySelector('.lg\\:col-span-7');
+                        if (chatEl) chatEl.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-900 font-bold flex items-center gap-1 text-[10px] cursor-pointer"
+                      className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                     >
-                      <Copy className="w-3 h-3" />
-                      <span>Copy</span>
+                      <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Ask AI Guide about this Sign</span>
                     </button>
                   </div>
-                </div>
-
-                {/* Detected Original Inscription */}
-                <div className="p-2.5 bg-white rounded-xl border border-amber-200/60 font-serif italic text-slate-800 text-xs">
-                  <span className="text-[9px] uppercase font-sans font-bold text-slate-400 block not-italic">Original Inscription in Photo:</span>
-                  "{ocrResult.detectedText}"
-                </div>
-
-                {/* Translated English Output */}
-                <div>
-                  <strong className="text-slate-900 block font-black text-xs">English Translation:</strong>
-                  <p className="text-slate-900 font-bold text-xs mt-0.5 leading-relaxed">{ocrResult.translatedText}</p>
-                </div>
-
-                {/* Cultural Tourist Insight */}
-                <div className="text-[11px] text-amber-950 bg-amber-100/70 p-2.5 rounded-xl border border-amber-300/60">
-                  💡 <strong>Cultural Tourist Advice:</strong> {ocrResult.culturalContext}
-                </div>
-
-                {/* Forward to Chatbot Button */}
-                <button
-                  onClick={() => {
-                    handleSendQuery(`Tell me more about this rule/signboard: "${ocrResult.translatedText}" in ${cityName}`);
-                    const chatEl = document.querySelector('.lg\\:col-span-7');
-                    if (chatEl) chatEl.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Ask AI Guide about this Sign</span>
-                </button>
+                )}
               </div>
             )}
+
+            {/* MODE 2: ✍️ LIVE TEXT & PHRASE TRANSLATOR */}
+            {translatorMode === 'text' && (
+              <div className="space-y-3">
+                <form onSubmit={handleTranslateTypedText} className="space-y-2">
+                  <div className="relative">
+                    <textarea
+                      rows={3}
+                      value={typedText}
+                      onChange={(e) => setTypedText(e.target.value)}
+                      placeholder={`Enter text or phrase in ${getLanguageName(sourceLanguage)} to translate into ${getLanguageName(targetLanguage)}...`}
+                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!typedText.trim() || isTranslatingTypedText}
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-black text-xs rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    {isTranslatingTypedText ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Translating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Translate to {getLanguageName(targetLanguage)}</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {/* Translated Output Box */}
+                {translatedTextOutput && (
+                  <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2 animate-fadeIn text-xs">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase text-blue-800">
+                      <span>Translated to {getLanguageName(targetLanguage)}</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handlePlayVoice(translatedTextOutput)}
+                          className="text-blue-700 hover:text-blue-900 font-bold flex items-center gap-0.5"
+                        >
+                          <Volume2 className="w-3 h-3" />
+                          <span>Audio</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(translatedTextOutput);
+                            alert('Copied translation!');
+                          }}
+                          className="text-blue-700 hover:text-blue-900 font-bold flex items-center gap-0.5 ml-2"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>Copy</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-slate-900 font-black text-sm leading-relaxed">
+                      {translatedTextOutput}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
 
           {/* 📖 ESSENTIAL PHRASEBOOK */}
